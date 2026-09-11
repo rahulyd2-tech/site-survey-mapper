@@ -1,12 +1,13 @@
 // App-shell cache so the survey form still works with no signal in the field.
 // Data itself is queued in IndexedDB (see js/db.js) and synced separately.
 
-const CACHE_NAME = "ssm-shell-v4";
+const CACHE_NAME = "ssm-shell-v5";
 const SHELL_FILES = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./css/styles.css",
+  "./assets/logo-aoa.png",
   "./js/geology.js",
   "./js/work-item-schema.js",
   "./js/db.js",
