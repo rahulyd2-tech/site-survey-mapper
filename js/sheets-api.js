@@ -4,12 +4,29 @@
 
 const CONFIG_KEY = "ssm_config";
 
+// Backend is pre-provisioned for this deployment — no setup screen needed.
+// These placeholders are substituted at deploy time by
+// .github/workflows/deploy.yml, which reads the real values from this
+// repo's Actions secret (SSM_TOKEN) and variable (SSM_WEB_APP_URL) — the
+// actual values are never committed to source control. For local dev,
+// override them via `setConfig({...getConfig(), webAppUrl, token})` in the
+// browser console.
+const DEFAULT_WEB_APP_URL = "__SSM_WEB_APP_URL__";
+const DEFAULT_TOKEN = "__SSM_TOKEN__";
+
 function getConfig() {
+  let saved = {};
   try {
-    return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {};
+    saved = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {};
   } catch {
-    return {};
+    saved = {};
   }
+  return {
+    webAppUrl: saved.webAppUrl || DEFAULT_WEB_APP_URL,
+    token: saved.token || DEFAULT_TOKEN,
+    engineerName: saved.engineerName || "",
+    projectName: saved.projectName || "",
+  };
 }
 
 function setConfig(cfg) {
@@ -17,8 +34,7 @@ function setConfig(cfg) {
 }
 
 function isConfigured() {
-  const cfg = getConfig();
-  return !!(cfg.webAppUrl && cfg.token);
+  return true;
 }
 
 async function callAppsScript(action, payload) {

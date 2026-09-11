@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject backend config
+        env:
+          SSM_WEB_APP_URL: ${{ vars.SSM_WEB_APP_URL }}
+          SSM_TOKEN: ${{ secrets.SSM_TOKEN }}
+        run: |
+          if [ -z "$SSM_WEB_APP_URL" ] || [ -z "$SSM_TOKEN" ]; then
+            echo "::error::Missing SSM_WEB_APP_URL variable or SSM_TOKEN secret. Set them under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          sed -i "s|__SSM_WEB_APP_URL__|${SSM_WEB_APP_URL}|g" js/sheets-api.js
+          sed -i "s|__SSM_TOKEN__|${SSM_TOKEN}|g" js/sheets-api.js
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

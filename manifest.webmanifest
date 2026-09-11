@@ -4,8 +4,8 @@
   "description": "Geo-tagged site survey capture for Age of Aquarius India Developers LLP",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f5f6f4",
-  "theme_color": "#204d3c",
+  "background_color": "#fafafa",
+  "theme_color": "#ffffff",
   "orientation": "portrait-primary",
   "icons": [
     {

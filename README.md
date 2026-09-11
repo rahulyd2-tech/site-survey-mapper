@@ -59,17 +59,32 @@ variants. Full notes are shown in the app's Settings screen.
    - Click Deploy, authorize again if prompted, and copy the **Web app URL**
      (ends in `/exec`).
 
-That URL + the token from step 4 are what you paste into the app's Settings
-screen.
+Keep this Web app URL and token handy for step 2 — site engineers themselves
+never need to enter them anywhere.
 
-## 2. Host the SPA
+## 2. Host the SPA (GitHub Pages via Actions)
 
-No build step — it's static HTML/CSS/JS. Any of these work:
+No build step for the app itself — it's static HTML/CSS/JS. This repo
+deploys via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml),
+which injects the backend URL/token from **GitHub Actions secrets and
+variables** at deploy time, so neither ever sits in source control:
 
-- **GitHub Pages / Netlify / Vercel**: push this folder to a repo and enable
-  static hosting.
-- **Locally on a phone/tablet for testing**: serve it with any static file
-  server, e.g. `npx serve .` from this directory, then open the shown URL.
+1. In the GitHub repo, go to **Settings > Secrets and variables > Actions**.
+2. Under **Variables**, add `SSM_WEB_APP_URL` = the Apps Script `/exec` URL
+   from step 1 (not sensitive by itself, but keeping it alongside the token
+   avoids drift between them).
+3. Under **Secrets**, add `SSM_TOKEN` = the token you set in `setup()`.
+4. In **Settings > Pages**, set **Source** to **GitHub Actions** (not
+   "Deploy from a branch").
+5. Push to `main` (or run the workflow manually from the **Actions** tab) —
+   the workflow substitutes both values into `js/sheets-api.js` at build
+   time, then publishes the result to Pages. The source file committed to
+   the repo only ever contains the placeholders `__SSM_WEB_APP_URL__` and
+   `__SSM_TOKEN__`.
+
+Other static hosts (Netlify, Vercel, etc.) work too — just replicate the
+same "substitute placeholders from the platform's secret store, then
+publish" step in their build pipeline instead.
 
 Once loaded once, the app shell (HTML/CSS/JS/map library) is cached by the
 service worker, so the form and map still work with no signal at all — only
@@ -79,15 +94,22 @@ For real field use, open the hosted URL on the engineer's phone and use
 **"Add to Home Screen"** (Safari/Chrome share menu) — it installs as a
 standalone app icon via the PWA manifest.
 
-## 3. Configure the app
+### Local development
 
-Open the app, go to **Settings**, and fill in:
+Since `js/sheets-api.js` only contains placeholders, sync calls will fail
+against a plain local checkout. Point it at your real backend for local
+testing via the browser console (persists in that browser's `localStorage`,
+never touches the source file):
 
-- **Apps Script Web App URL** — the `/exec` URL from step 1.
-- **Shared token** — the token you set in `setup()`.
-- **Engineer name** and **Project/site name** — stamped on every record.
+```js
+setConfig({ ...getConfig(), webAppUrl: "https://script.google.com/.../exec", token: "your-token" });
+```
 
-Tap **Test Connection** to confirm it can reach the backend.
+## 3. Set your name and project
+
+Open the app, go to **Settings**, and fill in your **engineer name** and
+**project/site name** — these are stamped on every record. Tap **Test** under
+"Backend connection" to confirm the app can reach the pre-configured backend.
 
 ## 4. Using it in the field
 

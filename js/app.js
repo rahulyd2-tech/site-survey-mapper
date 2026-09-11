@@ -35,8 +35,6 @@ async function render() {
       return renderDroneImport();
     case "sync":
       return renderSyncView();
-    case "settings":
-      return renderSettings();
     default:
       return renderDashboard();
   }
@@ -104,20 +102,32 @@ function renderEntryPicker() {
     <div class="view view-picker">
       <h2>New Entry</h2>
       <button class="tile" data-goto="work-item-form">
-        <span class="tile-icon">📍</span>
-        <span>Work Item<br><small>Fencing, road, pipeline, well, excavation…</small></span>
+        <span class="tile-icon tile-icon-a">📍</span>
+        <span class="tile-text">
+          <span class="tile-title">Work Item</span>
+          <span class="tile-sub">Fencing, road, pipeline, well, excavation…</span>
+        </span>
       </button>
       <button class="tile" data-goto="media-photo">
-        <span class="tile-icon">📷</span>
-        <span>Photo<br><small>Geo-tagged site photo</small></span>
+        <span class="tile-icon tile-icon-b">📷</span>
+        <span class="tile-text">
+          <span class="tile-title">Photo</span>
+          <span class="tile-sub">Geo-tagged site photo</span>
+        </span>
       </button>
       <button class="tile" data-goto="media-video">
-        <span class="tile-icon">🎥</span>
-        <span>Video<br><small>Geo-tagged walkthrough video</small></span>
+        <span class="tile-icon tile-icon-b">🎥</span>
+        <span class="tile-text">
+          <span class="tile-title">Video</span>
+          <span class="tile-sub">Geo-tagged walkthrough video</span>
+        </span>
       </button>
       <button class="tile" data-goto="drone-import">
-        <span class="tile-icon">🚁</span>
-        <span>Drone Flight<br><small>Import DJI Air 3 .SRT telemetry</small></span>
+        <span class="tile-icon tile-icon-c">🚁</span>
+        <span class="tile-text">
+          <span class="tile-title">Drone Flight</span>
+          <span class="tile-sub">Import DJI Air 3 .SRT telemetry</span>
+        </span>
       </button>
     </div>
   `;
@@ -194,6 +204,12 @@ function renderWorkItemForm() {
   function renderFields() {
     const schema = WORK_ITEM_SCHEMAS[typeSelect.value];
     fieldsContainer.innerHTML = schema.fields.map((f) => renderFieldHtml(f)).join("");
+    if (typeSelect.value === "excavation") {
+      fieldsContainer.innerHTML += `<details class="details-note">
+        <summary>Regional geology reference</summary>
+        <p class="geology-note">${PURANDAR_GEOLOGY_NOTES}</p>
+      </details>`;
+    }
     wireFieldEvents(fieldsContainer, schema);
   }
 
@@ -602,8 +618,7 @@ async function renderSyncView() {
         <div>${navigator.onLine ? "🟢 Online" : "🔴 Offline"}</div>
         <div>${queue.length} item(s) pending</div>
       </div>
-      <button id="sync-now" class="btn-primary" ${isConfigured() ? "" : "disabled"}>Sync Now</button>
-      ${!isConfigured() ? `<div class="error">Configure the Apps Script Web App URL + token in Settings first.</div>` : ""}
+      <button id="sync-now" class="btn-primary">Sync Now</button>
       <div class="queue-list">
         ${queue
           .map(
@@ -635,62 +650,36 @@ onSyncChange(async () => {
 syncBadge.addEventListener("click", syncNow);
 
 // ---------------------------------------------------------------------
-// Settings
+// "Who are you?" onboarding modal — replaces a dedicated Settings screen.
+// Shown automatically on first launch (no engineer name saved yet), and
+// reopenable any time via tapping the header brand.
 // ---------------------------------------------------------------------
 
-function renderSettings() {
-  const cfg = getConfig();
-  viewRoot.innerHTML = `
-    <div class="view view-form">
-      <h2>Settings</h2>
-      <div class="field-group">
-        <label>Apps Script Web App URL</label>
-        <input id="s-url" type="text" value="${cfg.webAppUrl || ""}" placeholder="https://script.google.com/macros/s/…/exec" />
-      </div>
-      <div class="field-group">
-        <label>Shared token</label>
-        <input id="s-token" type="text" value="${cfg.token || ""}" placeholder="Set in the Apps Script CONFIG" />
-      </div>
-      <div class="field-group">
-        <label>Engineer name</label>
-        <input id="s-engineer" type="text" value="${cfg.engineerName || ""}" />
-      </div>
-      <div class="field-group">
-        <label>Project / site name</label>
-        <input id="s-project" type="text" value="${cfg.projectName || ""}" placeholder="e.g. Purandar Site — Plot 4" />
-      </div>
-      <button id="s-save" class="btn-primary">Save Settings</button>
-      <button id="s-test" class="btn-secondary">Test Connection</button>
-      <div id="s-result" class="error"></div>
+const whoAreYouOverlay = document.getElementById("whoareyou-overlay");
 
-      <h3>Regional geology reference</h3>
-      <p class="geology-note">${PURANDAR_GEOLOGY_NOTES}</p>
-    </div>
-  `;
-  document.getElementById("s-save").addEventListener("click", () => {
-    setConfig({
-      webAppUrl: document.getElementById("s-url").value.trim(),
-      token: document.getElementById("s-token").value.trim(),
-      engineerName: document.getElementById("s-engineer").value.trim(),
-      projectName: document.getElementById("s-project").value.trim(),
-    });
-    document.getElementById("s-result").textContent = "Saved.";
-    document.getElementById("s-result").className = "success";
-  });
-  document.getElementById("s-test").addEventListener("click", async () => {
-    const resultEl = document.getElementById("s-result");
-    resultEl.textContent = "Testing…";
-    resultEl.className = "error";
-    try {
-      await callAppsScript("ping", {});
-      resultEl.textContent = "Connected successfully.";
-      resultEl.className = "success";
-    } catch (err) {
-      resultEl.textContent = `Failed: ${err.message}`;
-      resultEl.className = "error";
-    }
-  });
+function openWhoAreYou() {
+  const cfg = getConfig();
+  document.getElementById("way-engineer").value = cfg.engineerName || "";
+  document.getElementById("way-project").value = cfg.projectName || "";
+  whoAreYouOverlay.hidden = false;
 }
+
+function closeWhoAreYou() {
+  whoAreYouOverlay.hidden = true;
+}
+
+document.getElementById("brand-button").addEventListener("click", openWhoAreYou);
+
+document.getElementById("way-save").addEventListener("click", () => {
+  setConfig({
+    ...getConfig(),
+    engineerName: document.getElementById("way-engineer").value.trim(),
+    projectName: document.getElementById("way-project").value.trim(),
+  });
+  closeWhoAreYou();
+});
+
+document.getElementById("way-skip").addEventListener("click", closeWhoAreYou);
 
 // ---------------------------------------------------------------------
 // Boot
@@ -704,3 +693,7 @@ if ("serviceWorker" in navigator) {
 
 navigate("dashboard");
 syncNow();
+
+if (!getConfig().engineerName) {
+  openWhoAreYou();
+}
