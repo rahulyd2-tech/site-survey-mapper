@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Site Survey Mapper</title>
+  <meta name="theme-color" content="#204d3c" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACpklEQVR42u3du01AUQxEQZdCIbRA/40AMTki4CPAux7pVOCd8D3deXh6lL7dOIEAEkACSABJAAkgASSAJIAEkAASQBJAAkgACSAJIAEkgASQAJIAEkACSABJAAkgASSAJIAEkAASQBJAH/Ty+vz5nOs6oC9xQQqgX0ED03BDEkAb6RxhNNyQBFAAnVZGgw5G1wHF0WliNPQwdBRQAZ0CRkMPQ7cAVdLJZTT0MHQF0BE9WYaGHob6AR3Uk2Jo6GGoGdBxPfsNDT0MdQKCJsLQ0MNQGyBQggwNPQz1AIIjzhBAALUAwiLR0NDDEEAA3QaEQq6hoYchgAC6Csj86YYAAigWkOELDAEEUCYgk3cYAggggHQNkLFrDAEEUBogMzcZAggggHQHkIHLDAEEEEACSADRc9EQQAABJIAEEEAAAQTQWkBGrTQEEEAACSABBBBAAAEEkAASQAABBBBAAAEEkAACCCCAAAIIIN8DyQdlAggggAACCCABJIAY8m88QAABJIAEEENX9AAEEEC6BoihGj0AAeS1Hv2fHoAAAkg3ATFUoAcggLwbr7PvxgMEEEOn9QAEUD4ghnL1bAHEUKgegABqAcRQop5dgBiK0wMQQF2AGMrSsxEQQ0F6lgJiKEXPXkAMRehZDYih/Xq2A2JouZ4AQAwtXycA0GVD+6fJAHTTUMQuMYCuGUoZJQnQHUNBi4QBumAoa448QMWMEodIBdRnKHSFYEA1jKLvHw8o3VD68RsAhTLqOHsPoCBGTQdvA7ScUd+pOwFtk1R84XJA/86o/rYnAP29pDsnvQXoVzHdPONdQD8k5VwACSABJIAEkASQABJAAkgCSAAJIAEkASSABJAAkgASQAJIAAkgVxBAAkgACSAJIAEkgASQBJAAEkACSHrfG9ozpgJH/OQ4AAAAAElFTkSuQmCC" />
+  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACpklEQVR42u3du01AUQxEQZdCIbRA/40AMTki4CPAux7pVOCd8D3deXh6lL7dOIEAEkACSABJAAkgASSAJIAEkAASQBJAAkgACSAJIAEkgASQAJIAEkACSABJAAkgASSAJIAEkAASQBJAH/Ty+vz5nOs6oC9xQQqgX0ED03BDEkAb6RxhNNyQBFAAnVZGgw5G1wHF0WliNPQwdBRQAZ0CRkMPQ7cAVdLJZTT0MHQF0BE9WYaGHob6AR3Uk2Jo6GGoGdBxPfsNDT0MdQKCJsLQ0MNQGyBQggwNPQz1AIIjzhBAALUAwiLR0NDDEEAA3QaEQq6hoYchgAC6Csj86YYAAigWkOELDAEEUCYgk3cYAggggHQNkLFrDAEEUBogMzcZAggggHQHkIHLDAEEEEACSADRc9EQQAABJIAEEEAAAQTQWkBGrTQEEEAACSABBBBAAAEEkAASQAABBBBAAAEEkAACCCCAAAIIIN8DyQdlAggggAACCCABJIAY8m88QAABJIAEEENX9AAEEEC6BoihGj0AAeS1Hv2fHoAAAkg3ATFUoAcggLwbr7PvxgMEEEOn9QAEUD4ghnL1bAHEUKgegABqAcRQop5dgBiK0wMQQF2AGMrSsxEQQ0F6lgJiKEXPXkAMRehZDYih/Xq2A2JouZ4AQAwtXycA0GVD+6fJAHTTUMQuMYCuGUoZJQnQHUNBi4QBumAoa448QMWMEodIBdRnKHSFYEA1jKLvHw8o3VD68RsAhTLqOHsPoCBGTQdvA7ScUd+pOwFtk1R84XJA/86o/rYnAP29pDsnvQXoVzHdPONdQD8k5VwACSABJIAEkASQABJAAkgCSAAJIAEkASSABJAAkgASQAJIAAkgVxBAAkgACSAJIAEkgASQBJAAEkACSHrfG9ozpgJH/OQ4AAAAAElFTkSuQmCC" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-title">Site Survey Mapper</span>
+      <span class="brand-sub">Age of Aquarius India Developers LLP</span>
+    </div>
+    <button id="sync-badge" class="sync-badge ok" title="Sync status">✓ Synced</button>
+  </header>
+
+  <main id="view-root"></main>
+
+  <nav class="bottom-nav">
+    <button data-view="dashboard" class="active"><span class="icon">🗺️</span><span>Map</span></button>
+    <button data-view="new-entry" class="fab"><span class="icon">＋</span><span>New</span></button>
+    <button data-view="sync"><span class="icon">⇅</span><span>Sync</span></button>
+    <button data-view="settings"><span class="icon">⚙️</span><span>Settings</span></button>
+  </nav>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/geology.js"></script>
+  <script src="js/work-item-schema.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/exif.js"></script>
+  <script src="js/srt-parser.js"></script>
+  <script src="js/sheets-api.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
