@@ -13,8 +13,13 @@
 const SHEET_WORK_ITEMS = "WorkItems";
 const SHEET_MEDIA = "Media";
 const SHEET_DRONE_FLIGHTS = "DroneFlights";
+const SHEET_LOGINS = "Logins";
 
 const HEADERS = {
+  [SHEET_LOGINS]: [
+    "id", "capturedAt", "receivedAt", "engineerName", "projectName",
+    "latitude", "longitude", "accuracy", "photoDriveUrl",
+  ],
   [SHEET_WORK_ITEMS]: [
     "id", "capturedAt", "receivedAt", "engineerName", "projectName",
     "workType", "latitude", "longitude", "fieldsJson", "notes",
@@ -83,6 +88,8 @@ function doPost(e) {
     switch (body.action) {
       case "ping":
         return jsonResponse_({ ok: true, data: {} });
+      case "addLogin":
+        return jsonResponse_({ ok: true, data: addLogin_(body.payload) });
       case "addWorkItem":
         return jsonResponse_({ ok: true, data: addWorkItem_(body.payload) });
       case "addMedia":
@@ -97,6 +104,16 @@ function doPost(e) {
   } catch (err) {
     return jsonResponse_({ ok: false, error: String(err) });
   }
+}
+
+function addLogin_(p) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_LOGINS);
+  sheet.appendRow([
+    p.id, p.capturedAt, new Date().toISOString(), p.engineerName || "", p.projectName || "",
+    p.latitude != null ? p.latitude : "", p.longitude != null ? p.longitude : "",
+    p.accuracy != null ? p.accuracy : "", p.photoDriveUrl || "",
+  ]);
+  return { row: sheet.getLastRow() };
 }
 
 function addWorkItem_(p) {

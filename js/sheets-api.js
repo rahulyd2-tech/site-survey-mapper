@@ -122,7 +122,22 @@ async function syncNow() {
 }
 
 async function processQueueOp(op) {
-  if (op.opType === "workItem") {
+  if (op.opType === "login") {
+    let photoDriveUrl = null;
+    if (op.fileId) {
+      const fileRow = await DBApi.getFile(op.fileId);
+      if (fileRow) {
+        const driveResult = await callAppsScript("uploadFile", {
+          folder: "CheckIns",
+          base64: await blobToBase64(fileRow.blob),
+          mimeType: fileRow.blob.type || "image/jpeg",
+          fileName: fileRow.meta.fileName,
+        });
+        photoDriveUrl = driveResult.url;
+      }
+    }
+    await callAppsScript("addLogin", { ...op.data, photoDriveUrl });
+  } else if (op.opType === "workItem") {
     await callAppsScript("addWorkItem", op.data);
   } else if (op.opType === "media") {
     let fileData = null;

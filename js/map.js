@@ -20,10 +20,20 @@ let markerLayer = null;
 
 function initMap(containerId) {
   mapInstance = L.map(containerId, { zoomControl: true }).setView(DEFAULT_CENTER, 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors",
-  }).addTo(mapInstance);
+  // Satellite base (Esri World Imagery) + a semi-transparent reference layer
+  // for roads/place labels, so it reads like a standard hybrid satellite view.
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+      maxZoom: 19,
+      attribution:
+        "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+    }
+  ).addTo(mapInstance);
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 19, opacity: 0.9 }
+  ).addTo(mapInstance);
   markerLayer = L.layerGroup().addTo(mapInstance);
   return mapInstance;
 }

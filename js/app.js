@@ -60,7 +60,8 @@ async function renderDashboard() {
   // real size (otherwise fitBounds miscalculates zoom against a 0x0 container).
   await new Promise((resolve) => requestAnimationFrame(resolve));
   mapInstance.invalidateSize();
-  const records = await DBApi.allRecords();
+  // Check-in selfies are attendance records, not survey data — keep them off the map/list.
+  const records = (await DBApi.allRecords()).filter((r) => r.type !== "login");
   recentWorkItems = records
     .filter((r) => r.type === "workItem")
     .sort((a, b) => b.createdAt - a.createdAt);
@@ -641,45 +642,164 @@ async function renderSyncView() {
 
 onSyncChange(async () => {
   const count = await pendingCount();
-  syncBadge.textContent = syncing ? "⇅ Syncing…" : count > 0 ? `⇅ ${count}` : "✓ Synced";
-  syncBadge.className = "sync-badge" + (syncing ? " syncing" : count > 0 ? " pending" : " ok");
+  syncBadge.textContent = syncing ? "" : count > 0 ? String(count > 9 ? "9+" : count) : "";
+  syncBadge.className = "nav-badge" + (syncing ? " syncing" : count > 0 ? " pending" : " ok");
+  syncBadge.title = syncing ? "Syncing…" : count > 0 ? `${count} item(s) pending` : "All synced";
   if (currentView === "sync") renderSyncView();
   if (currentView === "dashboard") renderDashboard();
 });
 
-syncBadge.addEventListener("click", syncNow);
-
 // ---------------------------------------------------------------------
-// "Who are you?" onboarding modal — replaces a dedicated Settings screen.
-// Shown automatically on first launch (no engineer name saved yet), and
-// reopenable any time via tapping the header brand.
+// Field check-in — mandatory every time the app opens. Captures a live
+// front-camera photo (no file picker — camera stream only) and the
+// engineer's name, while silently grabbing a current GPS fix in the
+// background. Not dismissible without completing both.
 // ---------------------------------------------------------------------
 
-const whoAreYouOverlay = document.getElementById("whoareyou-overlay");
+const checkinOverlay = document.getElementById("checkin-overlay");
+const checkinVideo = document.getElementById("checkin-video");
+const checkinCanvas = document.getElementById("checkin-canvas");
+const checkinStatus = document.getElementById("checkin-camera-status");
+const checkinError = document.getElementById("checkin-error");
+const wayEngineerInput = document.getElementById("way-engineer");
+const wayProjectInput = document.getElementById("way-project");
+const waySaveBtn = document.getElementById("way-save");
 
-function openWhoAreYou() {
+let checkinStream = null;
+let checkinLocation = null;
+let cameraReady = false;
+
+function updateCheckinSaveEnabled() {
+  waySaveBtn.disabled = !(cameraReady && wayEngineerInput.value.trim().length > 0);
+}
+
+async function startCheckinCamera() {
+  cameraReady = false;
+  updateCheckinSaveEnabled();
+  checkinStatus.hidden = false;
+  checkinStatus.classList.remove("camera-status-error");
+  checkinStatus.textContent = "Starting camera…";
+  try {
+    checkinStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false,
+    });
+    checkinVideo.srcObject = checkinStream;
+    await checkinVideo.play().catch(() => {});
+    cameraReady = true;
+    checkinStatus.hidden = true;
+  } catch (err) {
+    checkinStatus.textContent =
+      "Camera access is required to check in. Please allow camera access and retry.";
+    checkinStatus.classList.add("camera-status-error");
+  }
+  updateCheckinSaveEnabled();
+}
+
+function stopCheckinCamera() {
+  if (checkinStream) {
+    checkinStream.getTracks().forEach((t) => t.stop());
+    checkinStream = null;
+  }
+  checkinVideo.srcObject = null;
+}
+
+function requestCheckinLocation() {
+  checkinLocation = null;
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      checkinLocation = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+      };
+    },
+    () => {
+      checkinLocation = null;
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+function openCheckin() {
   const cfg = getConfig();
-  document.getElementById("way-engineer").value = cfg.engineerName || "";
-  document.getElementById("way-project").value = cfg.projectName || "";
-  whoAreYouOverlay.hidden = false;
+  wayEngineerInput.value = cfg.engineerName || "";
+  wayProjectInput.value = cfg.projectName || "";
+  checkinError.textContent = "";
+  checkinOverlay.hidden = false;
+  requestCheckinLocation();
+  startCheckinCamera();
 }
 
-function closeWhoAreYou() {
-  whoAreYouOverlay.hidden = true;
+function closeCheckin() {
+  checkinOverlay.hidden = true;
+  stopCheckinCamera();
 }
 
-document.getElementById("brand-button").addEventListener("click", openWhoAreYou);
-
-document.getElementById("way-save").addEventListener("click", () => {
-  setConfig({
-    ...getConfig(),
-    engineerName: document.getElementById("way-engineer").value.trim(),
-    projectName: document.getElementById("way-project").value.trim(),
-  });
-  closeWhoAreYou();
+document.getElementById("brand-button").addEventListener("click", openCheckin);
+wayEngineerInput.addEventListener("input", updateCheckinSaveEnabled);
+document.getElementById("checkin-camera-status").addEventListener("click", () => {
+  if (!cameraReady) startCheckinCamera();
 });
 
-document.getElementById("way-skip").addEventListener("click", closeWhoAreYou);
+waySaveBtn.addEventListener("click", async () => {
+  const name = wayEngineerInput.value.trim();
+  if (!name) {
+    checkinError.textContent = "Your name is required.";
+    return;
+  }
+  if (!cameraReady) {
+    checkinError.textContent = "Camera isn't ready yet — allow camera access to continue.";
+    return;
+  }
+  checkinError.textContent = "";
+  waySaveBtn.disabled = true;
+
+  const w = checkinVideo.videoWidth || 480;
+  const h = checkinVideo.videoHeight || 480;
+  checkinCanvas.width = w;
+  checkinCanvas.height = h;
+  checkinCanvas.getContext("2d").drawImage(checkinVideo, 0, 0, w, h);
+  const blob = await new Promise((resolve) =>
+    checkinCanvas.toBlob(resolve, "image/jpeg", 0.85)
+  );
+
+  const projectName = wayProjectInput.value.trim();
+  setConfig({ ...getConfig(), engineerName: name, projectName });
+
+  const id = newId("login");
+  const fileId = blob ? `${id}_photo` : null;
+  if (blob && fileId) {
+    await DBApi.putFile(fileId, blob, { fileName: `${id}.jpg` });
+  }
+  const loc = checkinLocation || {};
+  const record = {
+    id,
+    type: "login",
+    createdAt: Date.now(),
+    syncStatus: "pending",
+    data: { engineerName: name, projectName, ...loc },
+  };
+  await DBApi.putRecord(record);
+  await DBApi.enqueue({
+    opType: "login",
+    recordId: id,
+    fileId,
+    data: {
+      id,
+      capturedAt: new Date(record.createdAt).toISOString(),
+      engineerName: name,
+      projectName,
+      latitude: loc.latitude ?? null,
+      longitude: loc.longitude ?? null,
+      accuracy: loc.accuracy ?? null,
+    },
+  });
+  syncNow();
+
+  closeCheckin();
+});
 
 // ---------------------------------------------------------------------
 // Boot
@@ -693,7 +813,4 @@ if ("serviceWorker" in navigator) {
 
 navigate("dashboard");
 syncNow();
-
-if (!getConfig().engineerName) {
-  openWhoAreYou();
-}
+openCheckin();

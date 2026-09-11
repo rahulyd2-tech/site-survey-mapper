@@ -8,6 +8,10 @@ Google Apps Script Web App whenever the device has signal.
 
 ## What it captures
 
+- **Field check-in** — every time the app opens, the engineer must take a
+  live front-camera photo (no file picker — camera stream only) and enter
+  their name before the app is usable; the device's current GPS fix is
+  captured silently in the background at the same time. Not dismissible.
 - **Work items** at an exact GPS coordinate, with type-specific fields:
   fencing, road (width/type: rocky, asphalt, concrete), pipeline (plastic
   0.5"–6" or cement, inches + mm), well digging (square/rectangle/circle,
@@ -36,7 +40,8 @@ actually encounter there: agricultural black cotton soil (regur) in
 valley/plateau farmland, shallower orange/lateritic soil on slopes, murum
 (weathered basalt gravel) as a sub-base layer, and hard rock as Black
 Basalt or the locally-traded "Green Manjri" / "Red Manjri" trap stone
-variants. Full notes are shown in the app's Settings screen.
+variants. Full notes are shown as an expandable note inside the Excavation
+form.
 
 ---
 
@@ -105,18 +110,22 @@ never touches the source file):
 setConfig({ ...getConfig(), webAppUrl: "https://script.google.com/.../exec", token: "your-token" });
 ```
 
-## 3. Set your name and project
+## 3. Check in
 
-Open the app, go to **Settings**, and fill in your **engineer name** and
-**project/site name** — these are stamped on every record. Tap **Test** under
-"Backend connection" to confirm the app can reach the pre-configured backend.
+The app opens straight into a **Field Check-In** screen every time it's
+launched: it asks for the engineer's name and a live front-camera photo
+(no photo library picker — it must be a fresh camera capture), while
+quietly grabbing a current GPS fix in the background. Both the name and
+the photo are required; there's no way to skip it. Tapping the logo in the
+header re-opens this screen later (e.g. to re-check-in as a different
+engineer on a shared device).
 
 ## 4. Using it in the field
 
 - **+ New > Work Item** — capture GPS (or type it in), pick the work type,
   fill in the type-specific fields, save. It queues locally and syncs
-  automatically when online (the sync badge in the header shows pending
-  count).
+  automatically when online (a badge on the **Sync** tab in the bottom nav
+  shows the pending count).
 - **+ New > Photo** — take/choose a photo; GPS is read from its EXIF data
   automatically.
 - **+ New > Video** — take/choose a video; tagged with live device GPS.
@@ -125,6 +134,9 @@ Open the app, go to **Settings**, and fill in your **engineer name** and
 - **+ New > Drone Flight** — select the DJI Air 3's `.SRT` file for the
   flight. The app parses it instantly and shows frame count, duration, and
   altitude range, then draws the flight path on the map.
+- **Map tab** — satellite imagery (Esri World Imagery, with a road/place
+  label overlay) rather than a street map, so pins line up with what's
+  actually on the ground.
 - **Sync tab** — see what's pending, retry failed items, or force a manual
   sync.
 
@@ -149,6 +161,8 @@ needed for photogrammetry or for this workflow and can be left off Drive.
 
 ## Data model (Google Sheet tabs)
 
+- **Logins** — id, timestamps, engineer/project, GPS fix (lat/lon/accuracy),
+  Drive link to the check-in selfie. One row per app open.
 - **WorkItems** — id, timestamps, engineer/project, work type, lat/lon,
   type-specific fields (as JSON), notes.
 - **Media** — id, timestamps, engineer/project, media type, lat/lon, Drive
@@ -160,6 +174,10 @@ needed for photogrammetry or for this workflow and can be left off Drive.
 
 ## Known limitations
 
+- Check-in needs the browser's camera and location permissions granted (and
+  HTTPS, which GitHub Pages already provides); if the engineer denies camera
+  access there's no fallback — by design, since the point is proof a live
+  person is present, not an uploaded photo.
 - The shared-token auth in Apps Script is lightweight (a single pre-shared
   secret), appropriate for a small internal team — not enterprise-grade
   access control.
