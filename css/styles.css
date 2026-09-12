@@ -449,6 +449,49 @@ h3 { font-size: 0.95rem; font-weight: 700; margin: 22px 0 10px; }
 .camera-status[hidden] { display: none; }
 .camera-status-error { cursor: pointer; background: rgba(146, 32, 32, 0.85); }
 
+.link-button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.link-button:hover { color: var(--teal-dark); }
+
+/* ---------------------------------------------------------------- admin */
+
+.admin-panel-card { max-width: 520px; }
+
+.admin-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.admin-panel-header h2 { margin: 0; }
+.admin-panel-header .link-button { width: auto; padding: 4px 8px; }
+
+#admin-users-list { margin-bottom: 8px; }
+
+.icon-btn {
+  border: none;
+  background: var(--surface-tint);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: 6px;
+}
+.icon-btn:active { transform: scale(0.94); }
+
 /* ---------------------------------------------------------------- map popup */
 
 .leaflet-popup-content-wrapper { border-radius: var(--radius-md); }

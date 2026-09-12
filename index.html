@@ -51,8 +51,12 @@
       </div>
 
       <div class="field-group">
-        <label>Your name <span class="required">*</span></label>
-        <input id="way-engineer" type="text" placeholder="Your name" autocomplete="off" />
+        <label>Employee code <span class="required">*</span></label>
+        <input id="way-employee-id" type="text" placeholder="e.g. AOAID0103" autocomplete="off" autocapitalize="characters" />
+      </div>
+      <div class="field-group">
+        <label>Password <span class="required">*</span></label>
+        <input id="way-password" type="password" placeholder="Password" autocomplete="off" />
       </div>
       <div class="field-group">
         <label>Project / site name</label>
@@ -61,7 +65,32 @@
 
       <div id="checkin-error" class="hint error"></div>
       <button id="way-save" class="btn-primary" disabled>Check In</button>
+      <button id="way-admin-link" class="link-button" type="button">Admin login</button>
     </div>
+  </div>
+
+  <div id="admin-login-overlay" class="modal-overlay" hidden>
+    <div class="modal-card">
+      <h2>Admin Login</h2>
+      <p class="modal-sub">Restricted to authorized administrators.</p>
+
+      <div class="field-group">
+        <label>Employee code <span class="required">*</span></label>
+        <input id="admin-login-id" type="text" placeholder="Employee code" autocomplete="off" autocapitalize="characters" />
+      </div>
+      <div class="field-group">
+        <label>Password <span class="required">*</span></label>
+        <input id="admin-login-password" type="password" placeholder="Password" autocomplete="off" />
+      </div>
+
+      <div id="admin-login-error" class="hint error"></div>
+      <button id="admin-login-submit" class="btn-primary">Login</button>
+      <button id="admin-login-back" class="link-button" type="button">Back to check-in</button>
+    </div>
+  </div>
+
+  <div id="admin-panel-overlay" class="modal-overlay admin-overlay" hidden>
+    <div class="modal-card admin-panel-card" id="admin-panel-content"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

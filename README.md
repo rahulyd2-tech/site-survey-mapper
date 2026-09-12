@@ -9,9 +9,13 @@ Google Apps Script Web App whenever the device has signal.
 ## What it captures
 
 - **Field check-in** — every time the app opens, the engineer must take a
-  live front-camera photo (no file picker — camera stream only) and enter
-  their name before the app is usable; the device's current GPS fix is
-  captured silently in the background at the same time. Not dismissible.
+  live front-camera photo (no file picker — camera stream only) and sign in
+  with their **employee code and password** before the app is usable; the
+  device's current GPS fix is captured silently in the background at the
+  same time. Not dismissible. Credentials are verified against the `Users`
+  sheet by the Apps Script backend (see *Authentication & Admin Mode*
+  below) — there's no local/offline bypass, since the point is to confirm a
+  known, active employee is present.
 - **Work items** at an exact GPS coordinate, with type-specific fields:
   fencing, road (width/type: rocky, asphalt, concrete), pipeline (plastic
   0.5"–6" or cement, inches + mm), well digging (square/rectangle/circle,
@@ -53,10 +57,16 @@ form.
 3. Delete the default `Code.gs` content and paste in the contents of
    [`apps-script/Code.gs`](apps-script/Code.gs) from this project.
 4. In `setup()`, change `TOKEN` to a long random string (this is the shared
-   secret the app uses to authenticate — treat it like a password).
+   secret the app uses to authenticate — treat it like a password), and
+   change the two seed passwords (for the admin account and the first
+   field employee) from their `CHANGE-ME-...` placeholders to real
+   passwords.
 5. Run `setup()` once (select it in the function dropdown, click ▶ Run).
    Approve the permission prompts (Sheets + Drive access). Check
-   **View > Logs** for the token and Drive folder URL it created.
+   **View > Logs** for the token and Drive folder URL it created. This also
+   seeds the `Users` sheet with the admin account and first field employee
+   — safe to re-run later (existing users are left untouched, so you can
+   blank the seed passwords back out afterwards if you like).
 6. **Deploy > New deployment**:
    - Type: **Web app**
    - Execute as: **Me**
@@ -113,12 +123,42 @@ setConfig({ ...getConfig(), webAppUrl: "https://script.google.com/.../exec", tok
 ## 3. Check in
 
 The app opens straight into a **Field Check-In** screen every time it's
-launched: it asks for the engineer's name and a live front-camera photo
-(no photo library picker — it must be a fresh camera capture), while
-quietly grabbing a current GPS fix in the background. Both the name and
-the photo are required; there's no way to skip it. Tapping the logo in the
-header re-opens this screen later (e.g. to re-check-in as a different
-engineer on a shared device).
+launched: it asks for an **employee code and password** and a live
+front-camera photo (no photo library picker — it must be a fresh camera
+capture), while quietly grabbing a current GPS fix in the background. All
+three are required and are verified against the backend before the app
+unlocks; there's no way to skip it and no offline bypass. Tapping the logo
+in the header re-opens this screen later (e.g. to re-check-in as a
+different engineer on a shared device).
+
+## Authentication & Admin Mode
+
+Employees sign in with an **employee code + password** (e.g. `AOAID0103`),
+not a freely-typed name. Credentials live in the `Users` sheet tab, stored
+as a per-user random salt + SHA-256 hash (`passwordSalt`/`passwordHash`
+columns) — never as plaintext — and are checked by the `authenticate`
+action in `apps-script/Code.gs` on every check-in.
+
+**Admin Mode** is restricted to a single hardcoded employee ID,
+`ADMIN_EMPLOYEE_ID` in `Code.gs` (seeded as `AOAID0001`). Tap **Admin
+login** on the check-in screen, sign in with the admin employee code and
+password, and the panel lets the admin:
+
+- **Add / onboard** a new employee (employee ID, name, mobile number,
+  initial password)
+- **Edit** an employee's name, mobile number, or reset their password
+- **Suspend / reactivate** an employee (a suspended employee code can no
+  longer check in, but the account and its history are kept)
+- **Delete** an employee entirely
+- **Change their own admin password** (a dedicated section in the panel —
+  separate from editing other users, since the admin account can't be
+  edited or suspended through the normal user-edit flow)
+
+The admin account itself can never be suspended or deleted (the backend
+rejects both, even if called directly) — there always has to be one way
+in. All of the above happen via dedicated `adminX` actions in `Code.gs`,
+each of which re-validates the admin's own employee ID + password before
+making any change, so admin capability isn't just a client-side UI gate.
 
 ## 4. Using it in the field
 
@@ -178,9 +218,12 @@ needed for photogrammetry or for this workflow and can be left off Drive.
   HTTPS, which GitHub Pages already provides); if the engineer denies camera
   access there's no fallback — by design, since the point is proof a live
   person is present, not an uploaded photo.
-- The shared-token auth in Apps Script is lightweight (a single pre-shared
-  secret), appropriate for a small internal team — not enterprise-grade
-  access control.
+- The Apps Script Web App itself is still gated by a single shared `TOKEN`
+  (all requests, including `authenticate`, must carry it) on top of the
+  per-employee password — appropriate for a small internal team, not
+  enterprise-grade access control.
+- There's exactly one admin account (`AOAID0001`); there's no multi-admin
+  or role hierarchy beyond "admin" vs "field".
 - Large video auto-upload is capped at 15MB; anything bigger needs the
   manual Drive-link step above.
 - No in-browser 3D reconstruction — by design, this app prepares data for

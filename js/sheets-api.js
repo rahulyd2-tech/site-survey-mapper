@@ -24,6 +24,7 @@ function getConfig() {
   return {
     webAppUrl: saved.webAppUrl || DEFAULT_WEB_APP_URL,
     token: saved.token || DEFAULT_TOKEN,
+    employeeId: saved.employeeId || "",
     engineerName: saved.engineerName || "",
     projectName: saved.projectName || "",
   };
@@ -55,6 +56,39 @@ async function callAppsScript(action, payload) {
     throw new Error(json.error || "Unknown server error");
   }
   return json.data;
+}
+
+// ---- Authentication / admin (direct calls, not queued — these need an
+// immediate answer, and only work online since verification happens on
+// the backend against the Users sheet) ---------------------------------
+
+async function authenticateEmployee(employeeId, password) {
+  return callAppsScript("authenticate", { employeeId, password });
+}
+
+async function changeOwnPassword(employeeId, currentPassword, newPassword) {
+  return callAppsScript("changeOwnPassword", { employeeId, currentPassword, newPassword });
+}
+
+async function adminListUsers(adminEmployeeId, adminPassword) {
+  const data = await callAppsScript("adminListUsers", { adminEmployeeId, adminPassword });
+  return data.users;
+}
+
+async function adminAddUser(adminEmployeeId, adminPassword, user) {
+  return callAppsScript("adminAddUser", { adminEmployeeId, adminPassword, ...user });
+}
+
+async function adminEditUser(adminEmployeeId, adminPassword, user) {
+  return callAppsScript("adminEditUser", { adminEmployeeId, adminPassword, ...user });
+}
+
+async function adminSetStatus(adminEmployeeId, adminPassword, employeeId, status) {
+  return callAppsScript("adminSetStatus", { adminEmployeeId, adminPassword, employeeId, status });
+}
+
+async function adminDeleteUser(adminEmployeeId, adminPassword, employeeId) {
+  return callAppsScript("adminDeleteUser", { adminEmployeeId, adminPassword, employeeId });
 }
 
 async function blobToBase64(blob) {

@@ -661,7 +661,8 @@ const checkinVideo = document.getElementById("checkin-video");
 const checkinCanvas = document.getElementById("checkin-canvas");
 const checkinStatus = document.getElementById("checkin-camera-status");
 const checkinError = document.getElementById("checkin-error");
-const wayEngineerInput = document.getElementById("way-engineer");
+const wayEmployeeIdInput = document.getElementById("way-employee-id");
+const wayPasswordInput = document.getElementById("way-password");
 const wayProjectInput = document.getElementById("way-project");
 const waySaveBtn = document.getElementById("way-save");
 
@@ -670,7 +671,11 @@ let checkinLocation = null;
 let cameraReady = false;
 
 function updateCheckinSaveEnabled() {
-  waySaveBtn.disabled = !(cameraReady && wayEngineerInput.value.trim().length > 0);
+  waySaveBtn.disabled = !(
+    cameraReady &&
+    wayEmployeeIdInput.value.trim().length > 0 &&
+    wayPasswordInput.value.length > 0
+  );
 }
 
 async function startCheckinCamera() {
@@ -724,12 +729,14 @@ function requestCheckinLocation() {
 
 function openCheckin() {
   const cfg = getConfig();
-  wayEngineerInput.value = cfg.engineerName || "";
+  wayEmployeeIdInput.value = cfg.employeeId || "";
+  wayPasswordInput.value = "";
   wayProjectInput.value = cfg.projectName || "";
   checkinError.textContent = "";
   checkinOverlay.hidden = false;
   requestCheckinLocation();
   startCheckinCamera();
+  updateCheckinSaveEnabled();
 }
 
 function closeCheckin() {
@@ -738,23 +745,37 @@ function closeCheckin() {
 }
 
 document.getElementById("brand-button").addEventListener("click", openCheckin);
-wayEngineerInput.addEventListener("input", updateCheckinSaveEnabled);
+wayEmployeeIdInput.addEventListener("input", updateCheckinSaveEnabled);
+wayPasswordInput.addEventListener("input", updateCheckinSaveEnabled);
 document.getElementById("checkin-camera-status").addEventListener("click", () => {
   if (!cameraReady) startCheckinCamera();
 });
 
 waySaveBtn.addEventListener("click", async () => {
-  const name = wayEngineerInput.value.trim();
-  if (!name) {
-    checkinError.textContent = "Your name is required.";
+  const employeeId = wayEmployeeIdInput.value.trim().toUpperCase();
+  const password = wayPasswordInput.value;
+  if (!employeeId || !password) {
+    checkinError.textContent = "Employee code and password are required.";
     return;
   }
   if (!cameraReady) {
     checkinError.textContent = "Camera isn't ready yet — allow camera access to continue.";
     return;
   }
-  checkinError.textContent = "";
+  checkinError.className = "hint";
+  checkinError.textContent = "Verifying…";
   waySaveBtn.disabled = true;
+
+  let employee;
+  try {
+    employee = await authenticateEmployee(employeeId, password);
+  } catch (err) {
+    checkinError.className = "hint error";
+    checkinError.textContent = err.message;
+    updateCheckinSaveEnabled();
+    return;
+  }
+  checkinError.textContent = "";
 
   const w = checkinVideo.videoWidth || 480;
   const h = checkinVideo.videoHeight || 480;
@@ -766,7 +787,12 @@ waySaveBtn.addEventListener("click", async () => {
   );
 
   const projectName = wayProjectInput.value.trim();
-  setConfig({ ...getConfig(), engineerName: name, projectName });
+  setConfig({
+    ...getConfig(),
+    employeeId: employee.employeeId,
+    engineerName: employee.name,
+    projectName,
+  });
 
   const id = newId("login");
   const fileId = blob ? `${id}_photo` : null;
@@ -779,7 +805,7 @@ waySaveBtn.addEventListener("click", async () => {
     type: "login",
     createdAt: Date.now(),
     syncStatus: "pending",
-    data: { engineerName: name, projectName, ...loc },
+    data: { employeeId: employee.employeeId, engineerName: employee.name, projectName, ...loc },
   };
   await DBApi.putRecord(record);
   await DBApi.enqueue({
@@ -789,7 +815,8 @@ waySaveBtn.addEventListener("click", async () => {
     data: {
       id,
       capturedAt: new Date(record.createdAt).toISOString(),
-      engineerName: name,
+      employeeId: employee.employeeId,
+      engineerName: employee.name,
       projectName,
       latitude: loc.latitude ?? null,
       longitude: loc.longitude ?? null,
@@ -800,6 +827,256 @@ waySaveBtn.addEventListener("click", async () => {
 
   closeCheckin();
 });
+
+// ---------------------------------------------------------------------
+// Admin mode — restricted to the AOAID0001 account. Reached via a link on
+// the check-in screen (no camera/photo needed for admin actions). Every
+// privileged call re-sends the admin's employee code + password so the
+// backend re-verifies authorization on each request; the password only
+// ever lives in memory for the duration of the admin session.
+// ---------------------------------------------------------------------
+
+let adminSession = null; // { employeeId, password, users }
+let adminPanelMode = "list"; // 'list' | 'add' | 'edit'
+let adminEditingUser = null;
+
+function openAdminLogin() {
+  closeCheckin();
+  document.getElementById("admin-login-id").value = "";
+  document.getElementById("admin-login-password").value = "";
+  document.getElementById("admin-login-error").textContent = "";
+  document.getElementById("admin-login-overlay").hidden = false;
+}
+
+function closeAdminLogin() {
+  document.getElementById("admin-login-overlay").hidden = true;
+}
+
+document.getElementById("way-admin-link").addEventListener("click", openAdminLogin);
+document.getElementById("admin-login-back").addEventListener("click", () => {
+  closeAdminLogin();
+  openCheckin();
+});
+
+document.getElementById("admin-login-submit").addEventListener("click", async () => {
+  const employeeId = document.getElementById("admin-login-id").value.trim();
+  const password = document.getElementById("admin-login-password").value;
+  const errorEl = document.getElementById("admin-login-error");
+  if (!employeeId || !password) {
+    errorEl.textContent = "Employee code and password are required.";
+    return;
+  }
+  errorEl.textContent = "";
+  const btn = document.getElementById("admin-login-submit");
+  btn.disabled = true;
+  try {
+    const users = await adminListUsers(employeeId, password);
+    adminSession = { employeeId: employeeId.trim().toUpperCase(), password, users };
+    closeAdminLogin();
+    adminPanelMode = "list";
+    openAdminPanel();
+  } catch (err) {
+    errorEl.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function openAdminPanel() {
+  document.getElementById("admin-panel-overlay").hidden = false;
+  renderAdminPanel();
+}
+
+function closeAdminPanel() {
+  document.getElementById("admin-panel-overlay").hidden = true;
+  adminSession = null;
+  openCheckin();
+}
+
+async function refreshAdminUsers() {
+  adminSession.users = await adminListUsers(adminSession.employeeId, adminSession.password);
+}
+
+function renderAdminPanel() {
+  const container = document.getElementById("admin-panel-content");
+
+  if (adminPanelMode === "list") {
+    container.innerHTML = `
+      <div class="admin-panel-header">
+        <h2>Admin Panel</h2>
+        <button id="admin-exit" class="link-button" type="button">Exit</button>
+      </div>
+      <button id="admin-add-user-btn" class="btn-primary">+ Add User</button>
+      <div id="admin-users-list">
+        ${adminSession.users.map((u) => adminUserRow(u)).join("")}
+      </div>
+      <h3>Change my password</h3>
+      <div class="field-group">
+        <label>Current password</label>
+        <input id="admin-pw-current" type="password" autocomplete="off" />
+      </div>
+      <div class="field-group">
+        <label>New password (min 6 characters)</label>
+        <input id="admin-pw-new" type="password" autocomplete="off" />
+      </div>
+      <div id="admin-pw-error" class="hint error"></div>
+      <div id="admin-pw-success" class="hint success"></div>
+      <button id="admin-pw-submit" class="btn-secondary">Update Password</button>
+    `;
+    document.getElementById("admin-exit").addEventListener("click", closeAdminPanel);
+    document.getElementById("admin-add-user-btn").addEventListener("click", () => {
+      adminPanelMode = "add";
+      adminEditingUser = null;
+      renderAdminPanel();
+    });
+    container.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        adminEditingUser = adminSession.users.find((u) => u.employeeId === btn.dataset.edit);
+        adminPanelMode = "edit";
+        renderAdminPanel();
+      });
+    });
+    container.querySelectorAll("[data-suspend]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const emp = btn.dataset.suspend;
+        const user = adminSession.users.find((u) => u.employeeId === emp);
+        const newStatus = user.status === "suspended" ? "active" : "suspended";
+        btn.disabled = true;
+        try {
+          await adminSetStatus(adminSession.employeeId, adminSession.password, emp, newStatus);
+          await refreshAdminUsers();
+          renderAdminPanel();
+        } catch (err) {
+          window.alert(err.message);
+          btn.disabled = false;
+        }
+      });
+    });
+    container.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const emp = btn.dataset.delete;
+        if (!window.confirm(`Delete user ${emp}? This can't be undone.`)) return;
+        btn.disabled = true;
+        try {
+          await adminDeleteUser(adminSession.employeeId, adminSession.password, emp);
+          await refreshAdminUsers();
+          renderAdminPanel();
+        } catch (err) {
+          window.alert(err.message);
+          btn.disabled = false;
+        }
+      });
+    });
+    document.getElementById("admin-pw-submit").addEventListener("click", async () => {
+      const current = document.getElementById("admin-pw-current").value;
+      const next = document.getElementById("admin-pw-new").value;
+      const errEl = document.getElementById("admin-pw-error");
+      const okEl = document.getElementById("admin-pw-success");
+      errEl.textContent = "";
+      okEl.textContent = "";
+      try {
+        await changeOwnPassword(adminSession.employeeId, current, next);
+        adminSession.password = next;
+        okEl.textContent = "Password updated.";
+        document.getElementById("admin-pw-current").value = "";
+        document.getElementById("admin-pw-new").value = "";
+      } catch (err) {
+        errEl.textContent = err.message;
+      }
+    });
+  } else {
+    const isEdit = adminPanelMode === "edit";
+    const u = adminEditingUser || {};
+    const isSelf = isEdit && u.employeeId === adminSession.employeeId;
+    container.innerHTML = `
+      <div class="admin-panel-header">
+        <h2>${isEdit ? "Edit User" : "Add User"}</h2>
+        <button id="admin-form-back" class="link-button" type="button">Back</button>
+      </div>
+      <div class="field-group">
+        <label>Employee ID${isEdit ? "" : ' <span class="required">*</span>'}</label>
+        <input id="admin-form-id" type="text" value="${u.employeeId || ""}" ${isEdit ? "disabled" : ""} autocapitalize="characters" />
+      </div>
+      <div class="field-group">
+        <label>Name</label>
+        <input id="admin-form-name" type="text" value="${u.name ? escapeHtml(u.name) : ""}" />
+      </div>
+      <div class="field-group">
+        <label>Mobile number</label>
+        <input id="admin-form-mobile" type="text" value="${u.mobileNumber ? escapeHtml(u.mobileNumber) : ""}" />
+      </div>
+      ${
+        isSelf
+          ? `<p class="hint">Use "Change my password" on the previous screen to update your own password.</p>`
+          : `<div class="field-group">
+              <label>${isEdit ? "New password (leave blank to keep current)" : "Password"}${isEdit ? "" : ' <span class="required">*</span>'}</label>
+              <input id="admin-form-password" type="password" autocomplete="off" />
+            </div>`
+      }
+      <div id="admin-form-error" class="hint error"></div>
+      <button id="admin-form-submit" class="btn-primary">${isEdit ? "Save Changes" : "Add User"}</button>
+    `;
+    document.getElementById("admin-form-back").addEventListener("click", () => {
+      adminPanelMode = "list";
+      renderAdminPanel();
+    });
+    document.getElementById("admin-form-submit").addEventListener("click", async () => {
+      const errEl = document.getElementById("admin-form-error");
+      errEl.textContent = "";
+      const employeeId = document.getElementById("admin-form-id").value.trim();
+      const name = document.getElementById("admin-form-name").value.trim();
+      const mobileNumber = document.getElementById("admin-form-mobile").value.trim();
+      const passwordField = document.getElementById("admin-form-password");
+      const password = passwordField ? passwordField.value : "";
+      const btn = document.getElementById("admin-form-submit");
+      btn.disabled = true;
+      try {
+        if (isEdit) {
+          await adminEditUser(adminSession.employeeId, adminSession.password, {
+            employeeId: u.employeeId,
+            name,
+            mobileNumber,
+            ...(password ? { password } : {}),
+          });
+        } else {
+          if (!employeeId) throw new Error("Employee ID is required.");
+          if (!password) throw new Error("Password is required.");
+          await adminAddUser(adminSession.employeeId, adminSession.password, {
+            employeeId,
+            name,
+            mobileNumber,
+            password,
+          });
+        }
+        await refreshAdminUsers();
+        adminPanelMode = "list";
+        renderAdminPanel();
+      } catch (err) {
+        errEl.textContent = err.message;
+        btn.disabled = false;
+      }
+    });
+  }
+}
+
+function adminUserRow(u) {
+  const isSelf = u.employeeId === adminSession.employeeId;
+  const statusBadgeClass = u.status === "suspended" ? "badge-error" : "badge-synced";
+  return `<div class="list-item">
+    <div class="list-item-body">
+      <div class="list-item-title">${escapeHtml(u.name || "(no name)")} <span class="hint">${u.employeeId}</span></div>
+      <div class="list-item-sub">${escapeHtml(u.mobileNumber || "No mobile on file")}</div>
+    </div>
+    <span class="badge ${statusBadgeClass}">${u.status}</span>
+    <button class="icon-btn" data-edit="${u.employeeId}" title="Edit">✏️</button>
+    ${
+      isSelf
+        ? ""
+        : `<button class="icon-btn" data-suspend="${u.employeeId}" title="${u.status === "suspended" ? "Reactivate" : "Suspend"}">${u.status === "suspended" ? "▶️" : "⏸️"}</button>
+           <button class="icon-btn" data-delete="${u.employeeId}" title="Delete">🗑️</button>`
+    }
+  </div>`;
+}
 
 // ---------------------------------------------------------------------
 // Boot
