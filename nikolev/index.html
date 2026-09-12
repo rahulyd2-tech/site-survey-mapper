@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title id="docTitle">NIKOL EV | Returns Calculator</title>
+<meta name="description" content="Estimate your EV charging station franchise investment, running costs and 10-year ROI with NIKOL EV.">
+<link rel="icon" href="NIKOL EV Final Logo Black.png">
+<style>
+  :root{
+    --pink-top:#f16f77;
+    --pink-bot:#eb2e77;
+    --pink-mid:#ef4a86;
+    --green:#25b350;
+    --green-dark:#3ddc78;
+    --ink:#f4f5f7;
+    --ink-soft:#9a9fa8;
+    --line:#2a2c33;
+    --paper:#17181d;
+    --bg:#0b0c10;
+    --bg-soft:rgba(235,46,119,0.09);
+    --gray-input-bg:#1f2126;
+    --gray-input-border:#34363d;
+    --radius:16px;
+    --shadow:0 8px 28px rgba(0,0,0,0.45);
+    --gradient:linear-gradient(120deg,var(--pink-top),var(--pink-bot));
+    --gradient-green:linear-gradient(120deg,#3ddc78,#189246);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:86px;
+  }
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    position:sticky;top:0;z-index:40;
+    background:rgba(11,12,16,0.88);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:10px 14px 9px;
+  }
+  .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  header.top img{height:33px;display:block;}
+  header.top .dmlrd img{height:25px;}
+  .lang-select{
+    display:flex;align-items:center;justify-content:center;gap:10px;margin-top:9px;
+  }
+  .lang-opt{
+    background:none;border:none;cursor:pointer;padding:2px 0;
+    font-size:11px;font-weight:700;letter-spacing:.3px;color:var(--ink-soft);
+    border-bottom:2px solid transparent;
+  }
+  .lang-opt.active{color:var(--pink-top);font-weight:800;border-bottom-color:var(--pink-top);}
+  .lang-dot{color:var(--line);font-size:10px;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:24px 18px 20px;
+    text-align:center;
+  }
+  .hero h1{
+    font-size:23px;line-height:1.3;margin:0 0 8px;
+    font-weight:800;letter-spacing:-0.3px;
+  }
+  .hero h1 span{
+    background:var(--gradient);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  /* ---------- Section shell ---------- */
+  .wrap{max-width:640px;margin:0 auto;padding:0 14px;}
+
+  .card{
+    background:var(--paper);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    padding:16px;
+    margin-bottom:14px;
+  }
+
+  /* ---------- Wizard stepper ---------- */
+  .stepper{
+    position:relative;display:flex;align-items:flex-start;justify-content:space-between;
+    padding:16px 6px 14px;margin-bottom:4px;
+  }
+  .stepper::before{
+    content:'';position:absolute;top:27px;left:11%;right:11%;height:1px;background:var(--line);z-index:0;
+  }
+  .step-tab{
+    position:relative;z-index:1;background:none;border:none;padding:0;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:0;
+    font-family:inherit;
+  }
+  .step-tab .circle{
+    width:27px;height:27px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;color:var(--ink-soft);
+    background:var(--paper);border:1.5px solid var(--line);transition:.2s;
+  }
+  .step-tab.active .circle{
+    background:var(--gradient);border-color:transparent;color:#fff;
+    box-shadow:0 4px 14px rgba(235,46,119,0.4);
+  }
+  .step-tab.done .circle{border-color:var(--green);color:var(--green-dark);}
+  .step-tab .lbl{
+    font-size:8.5px;font-weight:800;letter-spacing:.2px;text-transform:uppercase;
+    color:var(--ink-soft);text-align:center;line-height:1.2;
+  }
+  .step-tab.active .lbl{color:var(--ink);}
+
+  /* ---------- Step panels ---------- */
+  .step-panel{display:none;}
+  .step-panel.active{display:block;animation:stepIn .25s ease;}
+  @keyframes stepIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .step-head{display:flex;align-items:center;gap:10px;margin:4px 4px 12px;}
+  .step-head .num{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--gradient);color:#fff;font-size:11px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .step-head h2{font-size:16px;margin:0;font-weight:800;}
+  .step-head small{display:block;font-size:11.5px;color:var(--ink-soft);font-weight:500;margin-top:1px;}
+
+  /* ---------- Bottom nav bar ---------- */
+  .nav-bar{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    padding:9px 12px calc(9px + env(safe-area-inset-bottom));
+    background:rgba(11,12,16,0.92);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:6px;
+  }
+  .nav-left{display:flex;align-items:center;gap:6px;flex:none;}
+  .nav-btn{
+    border:1.5px solid var(--line);background:var(--paper);color:var(--ink);
+    font-size:12.5px;font-weight:800;padding:10px 12px;border-radius:12px;cursor:pointer;
+    display:flex;align-items:center;gap:4px;flex:none;white-space:nowrap;
+  }
+  .nav-btn:active{transform:scale(0.97);}
+  .nav-btn.primary{
+    border:none;background:var(--gradient);color:#fff;justify-content:center;
+    box-shadow:0 6px 16px rgba(235,46,119,0.3);
+    width:92px;padding:10px 6px;font-size:11.5px;
+  }
+  .nav-btn.icon-btn{
+    width:38px;padding:10px 0;justify-content:center;font-size:15px;flex:none;
+  }
+  .nav-btn[hidden]{display:none;}
+  .nav-btn[disabled]{opacity:0.6;cursor:default;}
+  .nav-live{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:88px;text-align:center;line-height:1.2;
+    background:var(--gradient-green);border-radius:12px;padding:7px 4px;
+    box-shadow:0 6px 16px rgba(24,146,70,0.35);
+  }
+  .nav-live .v{font-size:14px;font-weight:900;color:#fff;letter-spacing:-0.2px;}
+  .nav-live .l{font-size:7.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,0.85);}
+
+  /* ---------- Field grid ---------- */
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.full{grid-column:1/-1;}
+  .field label{font-size:12px;font-weight:700;color:var(--ink);}
+  .field .hint{font-size:10.5px;color:var(--ink-soft);font-weight:500;line-height:1.35;}
+  .input-affix{
+    position:relative;display:flex;align-items:center;
+    background:var(--gray-input-bg);
+    border:1.5px solid var(--gray-input-border);
+    border-radius:10px;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .input-affix:focus-within{
+    border-color:var(--pink-bot);
+    box-shadow:0 0 0 3px rgba(235,46,119,0.12);
+  }
+  .input-affix .pre,.input-affix .suf{
+    font-size:12.5px;font-weight:700;color:var(--ink-soft);
+    padding:0 8px;flex:none;
+  }
+  .input-affix input{
+    width:100%;border:none;background:transparent;outline:none;
+    padding:10px 6px;font-size:15px;font-weight:700;color:var(--ink);
+    -moz-appearance:textfield;
+  }
+  .input-affix input::-webkit-outer-spin-button,
+  .input-affix input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .computed-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--bg-soft);
+    border:1px dashed rgba(241,111,119,0.4);
+    border-radius:10px;
+    padding:9px 12px;margin-top:2px;
+  }
+  .computed-row .lbl{font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .computed-row .val{font-size:14px;font-weight:800;color:var(--pink-top);}
+
+  /* ---------- Years grid (hours per day) ---------- */
+  .years-grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  }
+  .year-cell{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .year-cell .yl{font-size:9.5px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
+  .year-cell .input-affix{width:100%;}
+  .year-cell input{text-align:center;padding:8px 2px;font-size:14px;}
+
+  .note{
+    font-size:11px;color:var(--ink-soft);background:rgba(255,196,58,0.07);border:1px solid rgba(255,196,58,0.28);
+    border-radius:10px;padding:8px 10px;margin-top:12px;line-height:1.4;
+  }
+  .step-note{
+    font-size:11px;color:var(--ink-soft);line-height:1.5;
+    background:rgba(37,179,80,0.07);border:1px solid rgba(37,179,80,0.25);
+    border-radius:10px;padding:10px 12px;margin-top:14px;
+  }
+  .step-note b{color:var(--green-dark);font-weight:800;}
+  .gst-note{
+    text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.4px;
+    color:#e3b341;background:rgba(255,196,58,0.09);border:1px solid rgba(255,196,58,0.3);
+    border-radius:10px;padding:8px;margin:18px 4px 6px;text-transform:uppercase;
+  }
+
+  /* ---------- Results ---------- */
+  .roi-hero{
+    border-radius:20px;
+    background:var(--gradient);
+    color:#fff;padding:24px 18px;text-align:center;
+    box-shadow:0 10px 30px rgba(235,46,119,0.28);
+    margin-bottom:14px;
+  }
+  .roi-hero .roi-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;opacity:.9;}
+  .roi-hero .roi-value{font-size:46px;font-weight:900;margin:6px 0 2px;letter-spacing:-1px;}
+  .roi-hero .roi-sub{font-size:12.5px;font-weight:600;opacity:.95;}
+  .roi-hero .payback{
+    display:inline-flex;align-items:center;gap:6px;
+    margin-top:14px;background:rgba(255,255,255,0.18);
+    border:1px solid rgba(255,255,255,0.35);
+    padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;
+  }
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .stat{
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:13px 12px;box-shadow:var(--shadow);
+  }
+  .stat .ic{
+    width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    margin-bottom:8px;font-size:14px;
+  }
+  .stat.g .ic{background:rgba(37,179,80,0.14);color:var(--green-dark);}
+  .stat.p .ic{background:rgba(235,46,119,0.12);color:var(--pink-bot);}
+  .stat .lbl{font-size:10.5px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+  .stat .val{font-size:17px;font-weight:800;margin-top:3px;}
+
+  .chart-card{padding:14px 12px 8px;}
+  .chart-card h3{font-size:13px;margin:0 0 2px;font-weight:800;}
+  .chart-card p.desc{font-size:11px;color:var(--ink-soft);margin:0 0 10px;}
+  .chart-wrap{position:relative;width:100%;}
+  .chart-wrap svg{width:100%;height:auto;display:block;overflow:visible;}
+  .chart-legend{display:flex;gap:16px;justify-content:center;margin:10px 0 4px;}
+  .chart-legend span{font-size:11px;font-weight:700;color:var(--ink-soft);display:flex;align-items:center;gap:5px;}
+  .chart-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
+
+  details.table-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;
+  }
+  details.table-card summary{
+    list-style:none;cursor:pointer;padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:13.5px;font-weight:800;
+  }
+  details.table-card summary::-webkit-details-marker{display:none;}
+  details.table-card summary .chev{transition:transform .2s;color:var(--pink-bot);font-size:12px;}
+  details.table-card[open] summary .chev{transform:rotate(180deg);}
+  .table-scroll{overflow-x:auto;border-top:1px solid var(--line);}
+  table{border-collapse:collapse;width:100%;font-size:11.5px;white-space:nowrap;}
+  th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);}
+  th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--paper);}
+  thead th{background:var(--bg);font-weight:800;color:var(--ink-soft);font-size:10px;text-transform:uppercase;letter-spacing:.3px;}
+  tfoot td{font-weight:800;background:var(--bg-soft);}
+
+  footer{
+    text-align:center;padding:26px 16px 10px;color:var(--ink-soft);font-size:11px;
+  }
+  footer .flogo{height:33px;display:block;margin:0 auto 10px;}
+
+  @media (min-width:640px){
+    .hero h1{font-size:27px;}
+    .years-grid{grid-template-columns:repeat(5,1fr);}
+    .stat-grid{grid-template-columns:repeat(4,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <img class="nikol-logo" src="NIKOL EV Final Logo Black.png" alt="NIKOL EV">
+    <span class="dmlrd"><img src="DMLRD - logo secondary half white - HR 1k.png" alt="DMLRD Tech"></span>
+  </div>
+  <div class="lang-select" id="langSelect">
+    <button class="lang-opt active" data-lang="en" type="button">English</button>
+    <span class="lang-dot">&middot;</span>
+    <button class="lang-opt" data-lang="mr" type="button">मराठी</button>
+    <span class="lang-dot">&middot;</span>
+    <button class="lang-opt" data-lang="hi" type="button">हिंदी</button>
+  </div>
+</header>
+
+<div class="hero">
+  <h1 data-i18n-html="hero_h1">What does <span>your</span> charging station earn?</h1>
+</div>
+
+<div class="wrap">
+
+  <div class="stepper" id="stepper">
+    <button class="step-tab" data-step="1"><span class="circle">1</span><span class="lbl" data-i18n="tab_charger">Charger</span></button>
+    <button class="step-tab" data-step="2"><span class="circle">2</span><span class="lbl" data-i18n="tab_costs">Costs</span></button>
+    <button class="step-tab" data-step="3"><span class="circle">3</span><span class="lbl" data-i18n="tab_revenue">Revenue</span></button>
+    <button class="step-tab" data-step="4"><span class="circle">4</span><span class="lbl" data-i18n="tab_schedule">Schedule</span></button>
+    <button class="step-tab" data-step="5"><span class="circle">✓</span><span class="lbl" data-i18n="tab_results">Results</span></button>
+  </div>
+
+  <!-- STEP 1: Investment -->
+  <section class="step-panel" data-step="1">
+    <div class="step-head"><span class="num">1</span><div><h2 data-i18n="step1_title">Charger &amp; Investment</h2><small data-i18n="step1_sub">One-time setup cost (CAPEX)</small></div></div>
+    <div class="card">
+    <div class="field-grid">
+      <div class="field full">
+        <label for="chargerKW" data-i18n="f_chargerType">Type of Charger</label>
+        <div class="input-affix">
+          <input type="number" id="chargerKW" value="120" min="1" step="1" list="kwList">
+          <span class="suf" data-i18n="suf_kw">kW</span>
+        </div>
+        <datalist id="kwList">
+          <option value="3.3"><option value="7.4"><option value="22">
+          <option value="30"><option value="60"><option value="120"><option value="240">
+        </datalist>
+      </div>
+      <div class="field">
+        <label for="chargerCost" data-i18n="f_chargerCost">Charger Cost</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="chargerCost" value="1000000" min="0" step="1000"></div>
+      </div>
+      <div class="field">
+        <label for="infraCost" data-i18n="f_infraCost">Infra Cost</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="infraCost" value="1500000" min="0" step="1000"></div>
+        <div class="hint" data-i18n="f_infraHint">Civil, wiring, panel &amp; installation</div>
+      </div>
+    </div>
+    <div class="computed-row">
+      <span class="lbl" data-i18n="f_capexLabel">Total CAPEX</span>
+      <span class="val" id="capexOut">₹0</span>
+    </div>
+    </div>
+    <div class="step-note" data-i18n-html="step1_note">💡 <b>Typical benchmarks:</b> a 60&nbsp;kW DC charger runs &#8377;8&#8211;12L and a 120&nbsp;kW unit &#8377;15&#8211;20L. Infra cost (civil work, wiring, panel upgrade) usually adds 100&#8211;150% of the charger cost depending on how site-ready the location already is.</div>
+  </section>
+
+  <!-- STEP 2: Operating Costs -->
+  <section class="step-panel" data-step="2">
+    <div class="step-head"><span class="num">2</span><div><h2 data-i18n="step2_title">Operating Costs</h2><small data-i18n="step2_sub">Recurring costs, excl. GST</small></div></div>
+    <div class="card">
+    <div class="field-grid">
+      <div class="field">
+        <label for="monthlyInternet" data-i18n="f_internet">Internet</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="monthlyInternet" value="300" min="0" step="10"></div>
+        <div class="hint" data-i18n="f_internetHint">Per month</div>
+      </div>
+      <div class="field">
+        <label for="annualCMS" data-i18n="f_cms">CMS Fees</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="annualCMS" value="10000" min="0" step="500"></div>
+        <div class="hint" data-i18n="f_cmsHint">Per year, flat for 10 yrs</div>
+      </div>
+      <div class="field full">
+        <label for="monthlyRental" data-i18n="f_rental">Site / Land Rental</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="monthlyRental" value="0" min="0" step="500"></div>
+        <div class="hint" data-i18n="f_rentalHint">Per month to landowner &middot; escalates 5% every year</div>
+      </div>
+    </div>
+    <div class="computed-row">
+      <span class="lbl" data-i18n="f_amcLabel">AMC (Year 2 onward)</span>
+      <span class="val" id="amcOut">₹0</span>
+    </div>
+    <div class="hint" style="margin-top:6px;" data-i18n="f_amcHint">AMC = 6% of charger cost, starting Year 2, increasing 5% every year after that.</div>
+    </div>
+    <div class="step-note" data-i18n-html="step2_note">💡 <b>Typical benchmarks:</b> AMC is usually 5&#8211;8% of charger cost. CMS/software fees typically run &#8377;8,000&#8211;15,000/year. Internet averages &#8377;300&#8211;800/month. Site rental varies widely by location, footfall and negotiation with the landowner.</div>
+  </section>
+
+  <!-- STEP 3: Revenue per unit -->
+  <section class="step-panel" data-step="3">
+    <div class="step-head"><span class="num">3</span><div><h2 data-i18n="step3_title">Revenue per Unit</h2><small data-i18n="step3_sub">Per kWh sold to the customer</small></div></div>
+    <div class="card">
+    <div class="field-grid">
+      <div class="field">
+        <label for="customerRate" data-i18n="f_customerRate">Customer Rate</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="customerRate" value="22" min="0" step="0.5"><span class="suf" data-i18n="suf_unit">/unit</span></div>
+      </div>
+      <div class="field">
+        <label for="discomCharges" data-i18n="f_discom">DISCOM Charges</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="discomCharges" value="10" min="0" step="0.5"><span class="suf" data-i18n="suf_unit">/unit</span></div>
+        <div class="hint" data-i18n="f_discomHint">Average power cost</div>
+      </div>
+      <div class="field">
+        <label for="serviceCharge" data-i18n="f_service">NIKOL EV Service Charge</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="serviceCharge" value="2" min="0" step="0.5"><span class="suf" data-i18n="suf_unit">/unit</span></div>
+      </div>
+      <div class="field">
+        <label for="landOwnerShare" data-i18n="f_landOwner">Land Owner Share</label>
+        <div class="input-affix"><span class="pre">₹</span><input type="number" id="landOwnerShare" value="2" min="0" step="0.5"><span class="suf" data-i18n="suf_unit">/unit</span></div>
+      </div>
+    </div>
+    <div class="computed-row">
+      <span class="lbl" data-i18n="f_ppuLabel">Profit per Unit</span>
+      <span class="val" id="ppuOut">₹0 /unit</span>
+    </div>
+    </div>
+    <div class="step-note" data-i18n-html="step3_note">💡 <b>Typical benchmarks:</b> urban customer rates range &#8377;18&#8211;25/unit. Commercial DISCOM tariffs run &#8377;8&#8211;12/unit depending on state and load slab. Service charge and land-owner share are typically &#8377;1&#8211;3/unit each.</div>
+  </section>
+
+  <!-- STEP 4: Operations -->
+  <section class="step-panel" data-step="4">
+    <div class="step-head"><span class="num">4</span><div><h2 data-i18n="step4_title">Operating Schedule</h2><small data-i18n="step4_sub">How much the charger runs each year</small></div></div>
+    <div class="card">
+    <div class="field-grid">
+      <div class="field full">
+        <label for="daysPerYear" data-i18n="f_days">Expected Operating Days / Year</label>
+        <div class="input-affix"><input type="number" id="daysPerYear" value="350" min="1" max="365"><span class="suf" data-i18n="suf_days">days</span></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <label style="font-size:12px;font-weight:700;" data-i18n="f_hoursLabel">Expected Charging Hours / Day &mdash; by Year</label>
+      <div class="hint" style="margin:3px 0 10px;" data-i18n="f_hoursHint">Utilisation typically ramps up as the site becomes known. Max 24 hrs.</div>
+      <div class="years-grid" id="hoursGrid"></div>
+    </div>
+    </div>
+    <div class="step-note" data-i18n-html="step4_note">💡 <b>Typical benchmarks:</b> utilisation usually starts at 2&#8211;4 hrs/day in Year 1 and ramps to 8&#8211;10 hrs/day by Year 4&#8211;5 as the site gains regular users. 330&#8211;350 operating days/year is standard, allowing for maintenance downtime.</div>
+    <div class="gst-note" data-i18n="gst_note">All amounts are excluding GST</div>
+  </section>
+
+  <!-- STEP 5: Results -->
+  <section class="step-panel" data-step="5" id="results">
+    <div class="step-head"><span class="num">✓</span><div><h2 data-i18n="step5_title">Your 10‑Year ROI</h2><small data-i18n="step5_sub">Recalculates instantly as you edit inputs</small></div></div>
+
+    <div class="roi-hero">
+      <div class="roi-label" data-i18n="roi_label">Return on Investment</div>
+      <div class="roi-value" id="roiMultiple">0.00x</div>
+      <div class="roi-sub" data-i18n="roi_sub">Total profit vs. CAPEX invested, over 10 years</div>
+      <div class="payback">⏱ <span data-i18n="payback_label">Payback period:</span> <span id="paybackOut">&mdash;</span></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat p"><div class="ic">💰</div><div class="lbl" data-i18n="stat_capex">Total CAPEX</div><div class="val" id="statCapex">₹0</div></div>
+      <div class="stat p"><div class="ic">🧾</div><div class="lbl" data-i18n="stat_opex">10-yr Opex</div><div class="val" id="statOpex">₹0</div></div>
+      <div class="stat g"><div class="ic">📈</div><div class="lbl" data-i18n="stat_profit">10-yr Profit</div><div class="val" id="statProfit">₹0</div></div>
+      <div class="stat g"><div class="ic">⚡</div><div class="lbl" data-i18n="stat_revenue">10-yr Revenue</div><div class="val" id="statRevenue">₹0</div></div>
+    </div>
+
+    <div class="card chart-card">
+      <h3 data-i18n="chart1_title">Investment vs. Returns</h3>
+      <p class="desc" data-i18n="chart1_desc">Cumulative capital deployed vs. cumulative profit earned &mdash; where the lines cross is your breakeven point.</p>
+      <div class="chart-wrap" id="chartCumulative"></div>
+      <div class="chart-legend">
+        <span><i style="background:var(--pink-bot)"></i><span data-i18n="legend_investment">Cumulative Investment</span></span>
+        <span><i style="background:var(--green)"></i><span data-i18n="legend_returns">Cumulative Returns</span></span>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <h3 data-i18n="chart2_title">Annual Net Cash Flow</h3>
+      <p class="desc" data-i18n="chart2_desc">Yearly profit after running costs (excludes CAPEX, already recovered above).</p>
+      <div class="chart-wrap" id="chartCashflow"></div>
+    </div>
+
+    <details class="table-card">
+      <summary><span data-i18n="table1_summary">Investment (Opex) breakdown &middot; 10 years</span> <span class="chev">▾</span></summary>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th data-i18n="table1_year">Year</th><th data-i18n="table1_rent">Rent</th><th data-i18n="table1_internet_cms">Internet+CMS</th><th data-i18n="table1_amc">AMC</th><th data-i18n="table1_total">Total</th></tr></thead>
+          <tbody id="opexBody"></tbody>
+          <tfoot><tr><td data-i18n="table_total">Total</td><td></td><td></td><td></td><td id="opexTotalCell"></td></tr></tfoot>
+        </table>
+      </div>
+    </details>
+
+    <details class="table-card">
+      <summary><span data-i18n="table2_summary">Returns breakdown &middot; 10 years</span> <span class="chev">▾</span></summary>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th data-i18n="table2_year">Year</th><th data-i18n="table2_kwh">kWh/hr</th><th data-i18n="table2_hrs">Hrs/day</th><th data-i18n="table2_rate">Rate</th><th data-i18n="table2_ppu">Profit/unit</th><th data-i18n="table2_days">Days</th><th data-i18n="table2_profit">Profit</th><th data-i18n="table2_revenue">Revenue</th></tr></thead>
+          <tbody id="returnsBody"></tbody>
+          <tfoot><tr><td data-i18n="table_total">Total</td><td></td><td></td><td></td><td></td><td></td><td id="returnsTotalG"></td><td id="returnsTotalH"></td></tr></tfoot>
+        </table>
+      </div>
+    </details>
+
+    <details class="table-card">
+      <summary><span data-i18n="table3_summary">Cash flow &amp; payback &middot; 10 years</span> <span class="chev">▾</span></summary>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th data-i18n="table3_year">Year</th><th data-i18n="table3_opex">Opex</th><th data-i18n="table3_profit">Profit</th><th data-i18n="table3_netcash">Net Cash</th><th data-i18n="table3_cuminv">Cum. Investment</th><th data-i18n="table3_cumret">Cum. Returns</th></tr></thead>
+          <tbody id="cashBody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="note" data-i18n="results_note">
+      Figures are indicative, based on the inputs above, and exclude GST. Actual results depend on site footfall, tariff changes and utilisation. AMC, rent and CMS assumptions follow NIKOL EV's standard franchise model.
+    </div>
+
+    <footer>
+      <img class="flogo" src="NIKOL EV Final Logo Black.png" alt="NIKOL EV">
+      <div data-i18n="footer_tagline">NIKOL EV &middot; Electrifying Future</div>
+      <div data-i18n="footer_sub">Returns Calculator &middot; Pune, Maharashtra</div>
+      <div style="margin-top:10px;opacity:.7;" data-i18n="footer_credit">Built for NIKOL EV by DMLRD Tech</div>
+    </footer>
+  </section>
+</div>
+
+<div class="nav-bar">
+  <div class="nav-left">
+    <button class="nav-btn icon-btn" id="resetBtn" type="button" data-i18n-title="nav_reset_title" title="Reset to defaults">↺</button>
+    <button class="nav-btn icon-btn" id="backBtn" type="button" data-i18n-title="nav_back_title" title="Back">←</button>
+  </div>
+  <div class="nav-live">
+    <div class="v" id="navRoi">0.00x</div>
+    <div class="l" data-i18n="nav_live_label">Live ROI</div>
+  </div>
+  <button class="nav-btn primary" id="nextBtn" type="button">Next →</button>
+  <button class="nav-btn primary" id="shareBtn" type="button" hidden>📤 Share</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.8/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  // ==================== i18n ====================
+  const I18N = {
+    en: {
+      hero_h1: 'What does <span>your</span> charging station earn?',
+      tab_charger:'Charger', tab_costs:'Costs', tab_revenue:'Revenue', tab_schedule:'Schedule', tab_results:'Results',
+      step1_title:'Charger &amp; Investment', step1_sub:'One-time setup cost (CAPEX)',
+      f_chargerType:'Type of Charger', f_chargerCost:'Charger Cost', f_infraCost:'Infra Cost',
+      f_infraHint:'Civil, wiring, panel &amp; installation', f_capexLabel:'Total CAPEX',
+      step1_note:'💡 <b>Typical benchmarks:</b> a 60&nbsp;kW DC charger runs &#8377;8&#8211;12L and a 120&nbsp;kW unit &#8377;15&#8211;20L. Infra cost (civil work, wiring, panel upgrade) usually adds 100&#8211;150% of the charger cost depending on how site-ready the location already is.',
+      step2_title:'Operating Costs', step2_sub:'Recurring costs, excl. GST',
+      f_internet:'Internet', f_internetHint:'Per month', f_cms:'CMS Fees', f_cmsHint:'Per year, flat for 10 yrs',
+      f_rental:'Site / Land Rental', f_rentalHint:'Per month to landowner &middot; escalates 5% every year',
+      f_amcLabel:'AMC (Year 2 onward)', f_amcHint:'AMC = 6% of charger cost, starting Year 2, increasing 5% every year after that.',
+      step2_note:'💡 <b>Typical benchmarks:</b> AMC is usually 5&#8211;8% of charger cost. CMS/software fees typically run &#8377;8,000&#8211;15,000/year. Internet averages &#8377;300&#8211;800/month. Site rental varies widely by location, footfall and negotiation with the landowner.',
+      step3_title:'Revenue per Unit', step3_sub:'Per kWh sold to the customer',
+      f_customerRate:'Customer Rate', f_discom:'DISCOM Charges', f_discomHint:'Average power cost',
+      f_service:'NIKOL EV Service Charge', f_landOwner:'Land Owner Share', f_ppuLabel:'Profit per Unit',
+      step3_note:'💡 <b>Typical benchmarks:</b> urban customer rates range &#8377;18&#8211;25/unit. Commercial DISCOM tariffs run &#8377;8&#8211;12/unit depending on state and load slab. Service charge and land-owner share are typically &#8377;1&#8211;3/unit each.',
+      step4_title:'Operating Schedule', step4_sub:'How much the charger runs each year',
+      f_days:'Expected Operating Days / Year', f_hoursLabel:'Expected Charging Hours / Day &mdash; by Year',
+      f_hoursHint:'Utilisation typically ramps up as the site becomes known. Max 24 hrs.',
+      step4_note:'💡 <b>Typical benchmarks:</b> utilisation usually starts at 2&#8211;4 hrs/day in Year 1 and ramps to 8&#8211;10 hrs/day by Year 4&#8211;5 as the site gains regular users. 330&#8211;350 operating days/year is standard, allowing for maintenance downtime.',
+      gst_note:'All amounts are excluding GST',
+      step5_title:'Your 10‑Year ROI', step5_sub:'Recalculates instantly as you edit inputs',
+      roi_label:'Return on Investment', roi_sub:'Total profit vs. CAPEX invested, over 10 years',
+      payback_label:'Payback period:', payback_beyond:'beyond 10 yrs', payback_years:'years',
+      stat_capex:'Total CAPEX', stat_opex:'10-yr Opex', stat_profit:'10-yr Profit', stat_revenue:'10-yr Revenue',
+      chart1_title:'Investment vs. Returns',
+      chart1_desc:'Cumulative capital deployed vs. cumulative profit earned &mdash; where the lines cross is your breakeven point.',
+      legend_investment:'Cumulative Investment', legend_returns:'Cumulative Returns',
+      chart2_title:'Annual Net Cash Flow',
+      chart2_desc:'Yearly profit after running costs (excludes CAPEX, already recovered above).',
+      table1_summary:'Investment (Opex) breakdown &middot; 10 years',
+      table1_year:'Year', table1_rent:'Rent', table1_internet_cms:'Internet+CMS', table1_amc:'AMC', table1_total:'Total',
+      table2_summary:'Returns breakdown &middot; 10 years',
+      table2_year:'Year', table2_kwh:'kWh/hr', table2_hrs:'Hrs/day', table2_rate:'Rate', table2_ppu:'Profit/unit',
+      table2_days:'Days', table2_profit:'Profit', table2_revenue:'Revenue',
+      table3_summary:'Cash flow &amp; payback &middot; 10 years',
+      table3_year:'Year', table3_opex:'Opex', table3_profit:'Profit', table3_netcash:'Net Cash',
+      table3_cuminv:'Cum. Investment', table3_cumret:'Cum. Returns', table_total:'Total',
+      results_note:"Figures are indicative, based on the inputs above, and exclude GST. Actual results depend on site footfall, tariff changes and utilisation. AMC, rent and CMS assumptions follow NIKOL EV's standard franchise model.",
+      footer_tagline:'NIKOL EV &middot; Electrifying Future', footer_sub:'Returns Calculator &middot; Pune, Maharashtra',
+      footer_credit:'Built for NIKOL EV by DMLRD Tech',
+      nav_reset_title:'Reset to defaults', nav_back_title:'Back', nav_next:'Next', nav_results:'Results',
+      nav_share:'Share', nav_live_label:'Live ROI', nav_generating:'Generating…',
+      year_word:'Year', breakeven_label:'BREAKEVEN', unit_lakh:'L', unit_crore:'Cr',
+      suf_kw:'kW', suf_unit:'/unit', suf_days:'days',
+      doc_title:'NIKOL EV | Returns Calculator'
+    },
+    hi: {
+      hero_h1: 'आपका चार्जिंग स्टेशन <span>कितनी</span> कमाई करेगा?',
+      tab_charger:'चार्जर', tab_costs:'लागत', tab_revenue:'राजस्व', tab_schedule:'अनुसूची', tab_results:'परिणाम',
+      step1_title:'चार्जर और निवेश', step1_sub:'एकमुश्त स्थापना लागत (CAPEX)',
+      f_chargerType:'चार्जर का प्रकार', f_chargerCost:'चार्जर लागत', f_infraCost:'इंफ्रा लागत',
+      f_infraHint:'सिविल कार्य, वायरिंग, पैनल व इंस्टॉलेशन', f_capexLabel:'कुल CAPEX',
+      step1_note:'💡 <b>सामान्य मानक:</b> 60 kW DC चार्जर की लागत ₹8–12 लाख और 120 kW यूनिट की ₹15–20 लाख होती है। इंफ्रा लागत (सिविल कार्य, वायरिंग, पैनल अपग्रेड) आमतौर पर साइट की तैयारी के अनुसार चार्जर लागत का 100–150% अतिरिक्त होती है।',
+      step2_title:'परिचालन लागत', step2_sub:'आवर्ती लागत, GST को छोड़कर',
+      f_internet:'इंटरनेट', f_internetHint:'प्रति माह', f_cms:'CMS शुल्क', f_cmsHint:'प्रति वर्ष, 10 वर्षों तक स्थिर',
+      f_rental:'साइट / भूमि किराया', f_rentalHint:'भूमि मालिक को प्रति माह · हर वर्ष 5% वृद्धि',
+      f_amcLabel:'AMC (दूसरे वर्ष से)', f_amcHint:'AMC = चार्जर लागत का 6%, दूसरे वर्ष से शुरू, उसके बाद हर वर्ष 5% वृद्धि।',
+      step2_note:'💡 <b>सामान्य मानक:</b> AMC आमतौर पर चार्जर लागत का 5–8% होता है। CMS/सॉफ़्टवेयर शुल्क ₹8,000–15,000/वर्ष तक होता है। इंटरनेट औसतन ₹300–800/माह। साइट किराया स्थान, फुटफॉल और भूमि मालिक से बातचीत के अनुसार काफी भिन्न होता है।',
+      step3_title:'प्रति यूनिट राजस्व', step3_sub:'ग्राहक को बेची गई प्रति kWh',
+      f_customerRate:'ग्राहक दर', f_discom:'DISCOM शुल्क', f_discomHint:'औसत बिजली लागत',
+      f_service:'NIKOL EV सेवा शुल्क', f_landOwner:'भूमि मालिक हिस्सा', f_ppuLabel:'प्रति यूनिट लाभ',
+      step3_note:'💡 <b>सामान्य मानक:</b> शहरी ग्राहक दरें ₹18–25/यूनिट के बीच होती हैं। व्यावसायिक DISCOM टैरिफ राज्य व लोड स्लैब के अनुसार ₹8–12/यूनिट होता है। सेवा शुल्क और भूमि मालिक हिस्सा आमतौर पर ₹1–3/यूनिट प्रत्येक होता है।',
+      step4_title:'परिचालन अनुसूची', step4_sub:'चार्जर हर वर्ष कितना चलता है',
+      f_days:'अपेक्षित परिचालन दिन / वर्ष', f_hoursLabel:'अपेक्षित चार्जिंग घंटे / दिन — वर्षवार',
+      f_hoursHint:'साइट की पहचान बनने के साथ उपयोग आमतौर पर बढ़ता है। अधिकतम 24 घंटे।',
+      step4_note:'💡 <b>सामान्य मानक:</b> उपयोग आमतौर पर पहले वर्ष में 2–4 घंटे/दिन से शुरू होकर चौथे–पांचवें वर्ष तक 8–10 घंटे/दिन तक पहुंच जाता है, जैसे-जैसे साइट को नियमित उपयोगकर्ता मिलते हैं। रखरखाव के लिए 330–350 परिचालन दिन/वर्ष मानक है।',
+      gst_note:'सभी राशियाँ GST को छोड़कर हैं',
+      step5_title:'आपका 10-वर्षीय ROI', step5_sub:'इनपुट बदलते ही तुरंत पुनर्गणना होती है',
+      roi_label:'निवेश पर प्रतिफल (ROI)', roi_sub:'10 वर्षों में कुल लाभ बनाम निवेशित CAPEX',
+      payback_label:'पेबैक अवधि:', payback_beyond:'10 वर्ष से अधिक', payback_years:'वर्ष',
+      stat_capex:'कुल CAPEX', stat_opex:'10-वर्षीय Opex', stat_profit:'10-वर्षीय लाभ', stat_revenue:'10-वर्षीय राजस्व',
+      chart1_title:'निवेश बनाम प्रतिफल',
+      chart1_desc:'संचित निवेशित पूंजी बनाम संचित अर्जित लाभ — जहाँ रेखाएँ मिलती हैं वहीं आपका ब्रेकईवन बिंदु है।',
+      legend_investment:'संचित निवेश', legend_returns:'संचित प्रतिफल',
+      chart2_title:'वार्षिक शुद्ध नकदी प्रवाह',
+      chart2_desc:'परिचालन लागत के बाद वार्षिक लाभ (CAPEX शामिल नहीं, जो ऊपर पहले ही वसूल हो चुका है)।',
+      table1_summary:'निवेश (Opex) विवरण · 10 वर्ष',
+      table1_year:'वर्ष', table1_rent:'किराया', table1_internet_cms:'इंटरनेट+CMS', table1_amc:'AMC', table1_total:'कुल',
+      table2_summary:'प्रतिफल विवरण · 10 वर्ष',
+      table2_year:'वर्ष', table2_kwh:'kWh/घं', table2_hrs:'घं/दिन', table2_rate:'दर', table2_ppu:'लाभ/यूनिट',
+      table2_days:'दिन', table2_profit:'लाभ', table2_revenue:'राजस्व',
+      table3_summary:'नकदी प्रवाह व पेबैक · 10 वर्ष',
+      table3_year:'वर्ष', table3_opex:'Opex', table3_profit:'लाभ', table3_netcash:'शुद्ध नकदी',
+      table3_cuminv:'संचित निवेश', table3_cumret:'संचित प्रतिफल', table_total:'कुल',
+      results_note:'आंकड़े ऊपर दिए गए इनपुट पर आधारित और सांकेतिक हैं, तथा GST को छोड़कर हैं। वास्तविक परिणाम साइट की फुटफॉल, टैरिफ परिवर्तन और उपयोग पर निर्भर करते हैं। AMC, किराया व CMS के अनुमान NIKOL EV के मानक फ्रैंचाइज़ी मॉडल के अनुसार हैं।',
+      footer_tagline:'NIKOL EV · इलेक्ट्रिफाइंग फ्यूचर', footer_sub:'रिटर्न्स कैलकुलेटर · पुणे, महाराष्ट्र',
+      footer_credit:'NIKOL EV के लिए DMLRD Tech द्वारा निर्मित',
+      nav_reset_title:'डिफ़ॉल्ट पर रीसेट करें', nav_back_title:'पीछे', nav_next:'आगे', nav_results:'परिणाम',
+      nav_share:'शेयर', nav_live_label:'लाइव ROI', nav_generating:'रिपोर्ट बन रही है…',
+      year_word:'वर्ष', breakeven_label:'ब्रेकईवन', unit_lakh:'लाख', unit_crore:'करोड़',
+      suf_kw:'kW', suf_unit:'/यूनिट', suf_days:'दिन',
+      doc_title:'NIKOL EV | रिटर्न्स कैलकुलेटर'
+    },
+    mr: {
+      hero_h1: 'तुमचे चार्जिंग स्टेशन <span>किती</span> कमाई करेल?',
+      tab_charger:'चार्जर', tab_costs:'खर्च', tab_revenue:'महसूल', tab_schedule:'वेळापत्रक', tab_results:'निकाल',
+      step1_title:'चार्जर आणि गुंतवणूक', step1_sub:'एकवेळची उभारणी खर्च (CAPEX)',
+      f_chargerType:'चार्जरचा प्रकार', f_chargerCost:'चार्जर खर्च', f_infraCost:'इन्फ्रा खर्च',
+      f_infraHint:'सिव्हिल काम, वायरिंग, पॅनेल व इन्स्टॉलेशन', f_capexLabel:'एकूण CAPEX',
+      step1_note:'💡 <b>सर्वसाधारण मानके:</b> 60 kW DC चार्जरची किंमत ₹8–12 लाख आणि 120 kW युनिटची ₹15–20 लाख असते. इन्फ्रा खर्च (सिव्हिल काम, वायरिंग, पॅनेल अपग्रेड) साधारणपणे साइटच्या तयारीनुसार चार्जर खर्चाच्या 100–150% इतका असतो.',
+      step2_title:'परिचालन खर्च', step2_sub:'नियमित खर्च, GST वगळून',
+      f_internet:'इंटरनेट', f_internetHint:'दरमहा', f_cms:'CMS शुल्क', f_cmsHint:'दरवर्षी, 10 वर्षांसाठी स्थिर',
+      f_rental:'साइट / जमीन भाडे', f_rentalHint:'जमीन मालकाला दरमहा · दरवर्षी 5% वाढ',
+      f_amcLabel:'AMC (दुसऱ्या वर्षापासून)', f_amcHint:'AMC = चार्जर खर्चाच्या 6%, दुसऱ्या वर्षापासून सुरू, त्यानंतर दरवर्षी 5% वाढ.',
+      step2_note:'💡 <b>सर्वसाधारण मानके:</b> AMC साधारणपणे चार्जर खर्चाच्या 5–8% असतो. CMS/सॉफ्टवेअर शुल्क साधारण ₹8,000–15,000/वर्ष असते. इंटरनेट सरासरी ₹300–800/महिना. साइट भाडे स्थान, फूटफॉल आणि जमीन मालकाशी वाटाघाटीनुसार मोठ्या प्रमाणात बदलते.',
+      step3_title:'प्रति युनिट महसूल', step3_sub:'ग्राहकाला विकलेल्या प्रति kWh',
+      f_customerRate:'ग्राहक दर', f_discom:'DISCOM शुल्क', f_discomHint:'सरासरी वीज खर्च',
+      f_service:'NIKOL EV सेवा शुल्क', f_landOwner:'जमीन मालक हिस्सा', f_ppuLabel:'प्रति युनिट नफा',
+      step3_note:'💡 <b>सर्वसाधारण मानके:</b> शहरी ग्राहक दर ₹18–25/युनिट दरम्यान असतो. व्यावसायिक DISCOM दर राज्य व लोड स्लॅबनुसार ₹8–12/युनिट असतो. सेवा शुल्क व जमीन मालक हिस्सा साधारणपणे प्रत्येकी ₹1–3/युनिट असतो.',
+      step4_title:'परिचालन वेळापत्रक', step4_sub:'चार्जर दरवर्षी किती वेळ चालतो',
+      f_days:'अपेक्षित परिचालन दिवस / वर्ष', f_hoursLabel:'अपेक्षित चार्जिंग तास / दिवस — वर्षनिहाय',
+      f_hoursHint:'साइटची ओळख वाढल्यावर वापर साधारणपणे वाढतो. कमाल 24 तास.',
+      step4_note:'💡 <b>सर्वसाधारण मानके:</b> वापर साधारणपणे पहिल्या वर्षी 2–4 तास/दिवस पासून सुरू होऊन चौथ्या–पाचव्या वर्षापर्यंत 8–10 तास/दिवस पर्यंत वाढतो, जसजसे साइटला नियमित वापरकर्ते मिळतात. देखभालीसाठी 330–350 परिचालन दिवस/वर्ष प्रमाणित आहे.',
+      gst_note:'सर्व रक्कम GST वगळून आहेत',
+      step5_title:'तुमचा 10-वर्षांचा ROI', step5_sub:'इनपुट बदलताच त्वरित पुनर्गणना होते',
+      roi_label:'गुंतवणुकीवरील परतावा (ROI)', roi_sub:'10 वर्षांतील एकूण नफा वि. गुंतवलेला CAPEX',
+      payback_label:'परतफेड कालावधी:', payback_beyond:'10 वर्षांपेक्षा जास्त', payback_years:'वर्षे',
+      stat_capex:'एकूण CAPEX', stat_opex:'10-वर्षीय Opex', stat_profit:'10-वर्षीय नफा', stat_revenue:'10-वर्षीय महसूल',
+      chart1_title:'गुंतवणूक वि. परतावा',
+      chart1_desc:'संचित गुंतवलेले भांडवल वि. संचित मिळालेला नफा — जिथे रेषा एकत्र येतात तिथेच तुमचा ब्रेकईव्हन बिंदू आहे.',
+      legend_investment:'संचित गुंतवणूक', legend_returns:'संचित परतावा',
+      chart2_title:'वार्षिक निव्वळ रोख प्रवाह',
+      chart2_desc:'परिचालन खर्चानंतरचा वार्षिक नफा (CAPEX वगळलेला, तो वर आधीच वसूल झाला आहे).',
+      table1_summary:'गुंतवणूक (Opex) तपशील · 10 वर्षे',
+      table1_year:'वर्ष', table1_rent:'भाडे', table1_internet_cms:'इंटरनेट+CMS', table1_amc:'AMC', table1_total:'एकूण',
+      table2_summary:'परतावा तपशील · 10 वर्षे',
+      table2_year:'वर्ष', table2_kwh:'kWh/तास', table2_hrs:'तास/दिवस', table2_rate:'दर', table2_ppu:'नफा/युनिट',
+      table2_days:'दिवस', table2_profit:'नफा', table2_revenue:'महसूल',
+      table3_summary:'रोख प्रवाह व परतफेड · 10 वर्षे',
+      table3_year:'वर्ष', table3_opex:'Opex', table3_profit:'नफा', table3_netcash:'निव्वळ रोख',
+      table3_cuminv:'संचित गुंतवणूक', table3_cumret:'संचित परतावा', table_total:'एकूण',
+      results_note:'आकडेवारी वरील इनपुटवर आधारित व सूचक आहे, आणि GST वगळलेली आहे. प्रत्यक्ष निकाल साइटच्या फूटफॉल, दर बदल आणि वापरावर अवलंबून असतात. AMC, भाडे व CMS चे अंदाज NIKOL EV च्या मानक फ्रँचायझी मॉडेलनुसार आहेत.',
+      footer_tagline:'NIKOL EV · इलेक्ट्रिफायिंग फ्युचर', footer_sub:'रिटर्न्स कॅल्क्युलेटर · पुणे, महाराष्ट्र',
+      footer_credit:'NIKOL EV साठी DMLRD Tech द्वारे तयार',
+      nav_reset_title:'डीफॉल्टवर रीसेट करा', nav_back_title:'मागे', nav_next:'पुढे', nav_results:'निकाल',
+      nav_share:'शेअर', nav_live_label:'लाइव्ह ROI', nav_generating:'अहवाल तयार होत आहे…',
+      year_word:'वर्ष', breakeven_label:'ब्रेकईव्हन', unit_lakh:'लाख', unit_crore:'कोटी',
+      suf_kw:'kW', suf_unit:'/युनिट', suf_days:'दिवस',
+      doc_title:'NIKOL EV | रिटर्न्स कॅल्क्युलेटर'
+    }
+  };
+
+  const VALID_LANGS = ['en','mr','hi'];
+  function getInitialLang(){
+    try {
+      const p = new URLSearchParams(window.location.search).get('lang');
+      if(p && VALID_LANGS.includes(p)) return p;
+    } catch(e){}
+    return 'en';
+  }
+  let currentLang = getInitialLang();
+  function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key; }
+
+  function applyStaticI18n(){
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n-html')); });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
+    document.getElementById('docTitle').textContent = t('doc_title');
+    document.title = t('doc_title');
+    document.getElementById('htmlRoot').lang = currentLang;
+    document.querySelectorAll('.year-cell .yl').forEach((el,i) => { el.textContent = `${t('year_word')} ${i+1}`; });
+    document.querySelectorAll('.lang-opt').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+  }
+
+  function setLang(lang){
+    if(!VALID_LANGS.includes(lang)) lang = 'en';
+    currentLang = lang;
+    applyStaticI18n();
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', lang);
+    window.history.replaceState({}, '', url);
+    updateNavLabels();
+    calculate();
+  }
+  document.querySelectorAll('.lang-opt').forEach(btn => {
+    btn.addEventListener('click', () => setLang(btn.dataset.lang));
+  });
+
+  // ==================== App ====================
+  const DEFAULTS = {
+    chargerKW:120, chargerCost:1000000, infraCost:1500000,
+    monthlyInternet:300, annualCMS:10000, monthlyRental:0,
+    customerRate:22, discomCharges:10, serviceCharge:2, landOwnerShare:2,
+    daysPerYear:350, hours:[2,3,4,5,6,7,8,9,10,10]
+  };
+
+  // Build the 10-year hours grid
+  const hoursGrid = $('hoursGrid');
+  DEFAULTS.hours.forEach((h,i)=>{
+    const cell = document.createElement('div');
+    cell.className = 'year-cell';
+    cell.innerHTML = `<span class="yl">Yr ${i+1}</span>
+      <div class="input-affix"><input type="number" class="hourInput" data-year="${i}" value="${h}" min="0" max="24" step="0.5"></div>`;
+    hoursGrid.appendChild(cell);
+  });
+
+  const inputIds = ['chargerKW','chargerCost','infraCost','monthlyInternet','annualCMS','monthlyRental',
+    'customerRate','discomCharges','serviceCharge','landOwnerShare','daysPerYear'];
+
+  function fmtINR(n, decimals){
+    if(!isFinite(n)) n = 0;
+    n = Math.round(n * Math.pow(10,decimals||0)) / Math.pow(10,decimals||0);
+    const neg = n < 0; n = Math.abs(n);
+    let parts = n.toFixed(decimals||0).split('.');
+    let intPart = parts[0];
+    let last3 = intPart.length > 3 ? intPart.slice(-3) : intPart;
+    let rest = intPart.length > 3 ? intPart.slice(0,-3) : '';
+    if(rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    let joined = (rest ? rest + ',' : '') + last3;
+    return (neg?'-':'') + '₹' + joined + (parts[1] ? '.'+parts[1] : '');
+  }
+  function fmtCompact(n){
+    const abs = Math.abs(n);
+    if(abs >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' ' + t('unit_crore');
+    if(abs >= 1e5) return '₹' + (n/1e5).toFixed(2) + ' ' + t('unit_lakh');
+    return fmtINR(n,0);
+  }
+
+  function readInputs(){
+    const v = {};
+    inputIds.forEach(id => v[id] = parseFloat($(id).value) || 0);
+    v.hours = Array.from(document.querySelectorAll('.hourInput')).map(inp => parseFloat(inp.value)||0);
+    return v;
+  }
+
+  function calculate(){
+    const v = readInputs();
+    const capex = v.chargerCost + v.infraCost;
+    const ppu = v.customerRate - v.discomCharges - v.serviceCharge - v.landOwnerShare;
+    const amcBase = v.chargerCost * 0.06;
+    const internetCms = v.monthlyInternet*12 + v.annualCMS;
+    const annualRentBase = v.monthlyRental * 12;
+    const kwhPerHour = v.chargerKW * 0.98;
+
+    let years = [];
+    let rent = 0, amc = 0;
+    let cumOpex = 0, cumG = 0;
+    for(let i=0;i<10;i++){
+      const year = i+1;
+      if(year === 1){ rent = annualRentBase; amc = 0; }
+      else if(year === 2){ rent = rent*1.05; amc = amcBase; }
+      else { rent = rent*1.05; amc = amc*1.05; }
+
+      const opexTotal = rent + internetCms + amc;
+      const hrs = v.hours[i];
+      const g = v.daysPerYear * ppu * hrs * kwhPerHour;
+      const h = kwhPerHour * hrs * v.customerRate * v.daysPerYear;
+
+      cumOpex += opexTotal;
+      cumG += g;
+
+      years.push({
+        year, rent, internetCms, amc, opexTotal,
+        kwh: kwhPerHour, hrs, rate: v.customerRate, ppu,
+        days: v.daysPerYear, g, h,
+        cumInvestment: capex + cumOpex,
+        cumReturns: cumG
+      });
+    }
+
+    const totalOpex = years.reduce((s,y)=>s+y.opexTotal,0);
+    const totalG = years.reduce((s,y)=>s+y.g,0);
+    const totalH = years.reduce((s,y)=>s+y.h,0);
+    const roiMultiple = capex > 0 ? totalG / capex : 0;
+
+    // payback period (linear interpolation between years where cum returns crosses cum investment)
+    let payback = null;
+    let prevYear = 0;
+    for(const y of years){
+      const gap = y.cumReturns - y.cumInvestment;
+      const prevGapVal = prevYear === 0 ? (0 - capex) : (years[prevYear-1].cumReturns - years[prevYear-1].cumInvestment);
+      if(gap >= 0){
+        if(prevGapVal >= 0){ payback = prevYear; }
+        else {
+          const frac = (-prevGapVal) / (gap - prevGapVal);
+          payback = prevYear + frac;
+        }
+        break;
+      }
+      prevYear = y.year;
+    }
+
+    render({v, capex, ppu, amcBase, years, totalOpex, totalG, totalH, roiMultiple, payback});
+  }
+
+  let lastCalc = null;
+  function render(d){
+    lastCalc = d;
+    $('capexOut').textContent = fmtINR(d.capex);
+    $('amcOut').textContent = fmtINR(d.amcBase);
+    $('ppuOut').textContent = fmtINR(d.ppu,2) + ' ' + t('suf_unit');
+
+    $('roiMultiple').textContent = d.roiMultiple.toFixed(2) + 'x';
+    $('paybackOut').textContent = d.payback === null ? t('payback_beyond') : d.payback.toFixed(1) + ' ' + t('payback_years');
+    $('navRoi').textContent = d.roiMultiple.toFixed(2) + 'x';
+
+    $('statCapex').textContent = fmtCompact(d.capex);
+    $('statOpex').textContent = fmtCompact(d.totalOpex);
+    $('statProfit').textContent = fmtCompact(d.totalG);
+    $('statRevenue').textContent = fmtCompact(d.totalH);
+
+    const yw = t('year_word');
+
+    // Opex table
+    const opexBody = $('opexBody');
+    opexBody.innerHTML = d.years.map(y => `<tr>
+      <td>${yw} ${y.year}</td><td>${fmtINR(y.rent)}</td><td>${fmtINR(y.internetCms)}</td>
+      <td>${fmtINR(y.amc)}</td><td><strong>${fmtINR(y.opexTotal)}</strong></td></tr>`).join('');
+    $('opexTotalCell').textContent = fmtINR(d.totalOpex);
+
+    // Returns table
+    const returnsBody = $('returnsBody');
+    returnsBody.innerHTML = d.years.map(y => `<tr>
+      <td>${yw} ${y.year}</td><td>${y.kwh.toFixed(1)}</td><td>${y.hrs}</td><td>${fmtINR(y.rate)}</td>
+      <td>${fmtINR(y.ppu,2)}</td><td>${y.days}</td><td><strong>${fmtINR(y.g)}</strong></td><td>${fmtINR(y.h)}</td></tr>`).join('');
+    $('returnsTotalG').textContent = fmtINR(d.totalG);
+    $('returnsTotalH').textContent = fmtINR(d.totalH);
+
+    // Cash flow table
+    const cashBody = $('cashBody');
+    cashBody.innerHTML = d.years.map(y => `<tr>
+      <td>${yw} ${y.year}</td><td>${fmtINR(y.opexTotal)}</td><td>${fmtINR(y.g)}</td>
+      <td><strong>${fmtINR(y.g - y.opexTotal)}</strong></td>
+      <td>${fmtINR(y.cumInvestment)}</td><td>${fmtINR(y.cumReturns)}</td></tr>`).join('');
+
+    drawCharts(d);
+  }
+
+  const CW = 320, CH = 210, PAD_L = 42, PAD_R = 10, PAD_T = 14, PAD_B = 22;
+  const GRID = '#2a2c33', AXIS = '#9a9fa8';
+
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function shade(hex, pct){
+    const n = parseInt(hex.slice(1),16);
+    let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+    const f = v => Math.min(255, Math.max(0, Math.round(v + (pct>=0 ? (255-v)*pct : v*pct))));
+    r=f(r); g=f(g); b=f(b);
+    return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  // Catmull-Rom -> smooth cubic bezier path through points
+  function smoothPath(pts){
+    if(pts.length < 3) return pts.map((p,i)=> (i===0?'M':'L') + p.x + ',' + p.y).join(' ');
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for(let i=0;i<pts.length-1;i++){
+      const p0 = pts[i-1] || pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i+1];
+      const p3 = pts[i+2] || p2;
+      const c1x = p1.x + (p2.x-p0.x)/6, c1y = p1.y + (p2.y-p0.y)/6;
+      const c2x = p2.x - (p3.x-p1.x)/6, c2y = p2.y - (p3.y-p1.y)/6;
+      d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`;
+    }
+    return d;
+  }
+
+  function svgLineChart(labels, series, breakeven){
+    const allVals = series.flatMap(s => s.data).concat([0]);
+    const max = Math.max(...allVals) * 1.1 || 1;
+    const min = Math.min(0, Math.min(...allVals));
+    const plotW = CW - PAD_L - PAD_R, plotH = CH - PAD_T - PAD_B;
+    const n = labels.length;
+    const x = i => PAD_L + (n===1 ? 0 : (plotW * i/(n-1)));
+    const y = v => PAD_T + plotH - ((v - min)/(max - min || 1)) * plotH;
+    const DX = 7, DY = -6;
+
+    let defs = '<defs>';
+    series.forEach((s,idx) => {
+      defs += `<linearGradient id="lg${idx}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${s.color}" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="${s.color}" stop-opacity="0.02"/>
+      </linearGradient>`;
+      defs += `<filter id="glow${idx}" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="${s.color}" flood-opacity="0.55"/>
+      </filter>`;
+    });
+    defs += '</defs>';
+
+    const zy = y(min);
+    const floor = `<polygon points="${PAD_L},${zy} ${CW-PAD_R},${zy} ${CW-PAD_R+DX},${zy+DY} ${PAD_L+DX},${zy+DY}" fill="rgba(255,255,255,0.035)" stroke="${GRID}" stroke-width="1"/>`;
+
+    let gridLines = '';
+    const gridCount = 4;
+    for(let g=1; g<=gridCount; g++){
+      const val = min + (max-min)*g/gridCount;
+      const gy = y(val);
+      gridLines += `<line x1="${PAD_L}" y1="${gy}" x2="${CW-PAD_R}" y2="${gy}" stroke="${GRID}" stroke-width="1" stroke-dasharray="2,3"/>`;
+      gridLines += `<text x="${PAD_L-6}" y="${gy+3}" font-size="8" fill="${AXIS}" text-anchor="end">${fmtCompact(val)}</text>`;
+    }
+
+    let xLabels = '';
+    labels.forEach((lb,i) => {
+      if(n>6 && i%2!==0 && i!==n-1) return;
+      xLabels += `<text x="${x(i)}" y="${CH-6}" font-size="8" fill="${AXIS}" text-anchor="middle">${lb}</text>`;
+    });
+
+    let paths = '';
+    series.forEach((s,idx) => {
+      const pts = s.data.map((v,i) => ({x:x(i), y:y(v)}));
+      const linePath = smoothPath(pts);
+      const areaPath = `${linePath} L${x(n-1)},${zy} L${x(0)},${zy} Z`;
+      paths += `<path d="${areaPath}" fill="url(#lg${idx})"/>`;
+      paths += `<path d="${linePath}" fill="none" stroke="${s.color}" stroke-width="2.75" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow${idx})"/>`;
+      pts.forEach(p => {
+        paths += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${s.color}" stroke="var(--paper)" stroke-width="1.5"/>`;
+      });
+    });
+
+    let breakEvenMarker = '';
+    if(breakeven !== null && breakeven >= 1 && breakeven <= n){
+      const frac = Math.min(n-1, Math.max(0, breakeven-1));
+      const bx = x(frac);
+      const i0 = Math.floor(frac), i1 = Math.min(n-1,i0+1), tt = frac-i0;
+      const val0 = lerp(series[0].data[i0], series[0].data[i1], tt);
+      const val1 = lerp(series[1].data[i0], series[1].data[i1], tt);
+      const by = y((val0+val1)/2);
+      const label = t('breakeven_label');
+      const bw = Math.max(50, label.length * 6.2 + 14);
+      const bxPos = Math.min(bx+6, CW-bw-8);
+      breakEvenMarker = `
+        <line x1="${bx}" y1="${PAD_T-2}" x2="${bx}" y2="${zy}" stroke="#fff" stroke-width="1" stroke-dasharray="3,3" opacity="0.35"/>
+        <circle cx="${bx}" cy="${by}" r="5.5" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+        <circle cx="${bx}" cy="${by}" r="2.5" fill="#fff"/>
+        <rect x="${bxPos}" y="${PAD_T-4}" width="${bw}" height="14" rx="7" fill="rgba(255,255,255,0.12)"/>
+        <text x="${bxPos+bw/2}" y="${PAD_T+6}" font-size="7.5" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="0.3">${label}</text>`;
+    }
+
+    return `<svg viewBox="0 0 ${CW} ${CH}" xmlns="http://www.w3.org/2000/svg">${defs}${floor}${gridLines}${paths}${breakEvenMarker}${xLabels}</svg>`;
+  }
+
+  function svgBarChart3D(labels, data, posColor, negColor){
+    const DX = 9, DY = -8;
+    const padT = PAD_T + 8, padR = PAD_R + DX + 2;
+    const max = Math.max(...data, 0) * 1.15 || 1;
+    const min = Math.min(...data, 0);
+    const plotW = CW - PAD_L - padR, plotH = CH - padT - PAD_B;
+    const n = data.length;
+    const bw = (plotW/n) * 0.46;
+    const y = v => padT + plotH - ((v - min)/(max - min || 1)) * plotH;
+    const zeroY = y(0);
+    const slot = i => PAD_L + (plotW*i/n) + (plotW/n - bw)/2;
+
+    const posC = { front: posColor, top: shade(posColor, 0.38), side: shade(posColor, -0.32) };
+    const negC = { front: negColor, top: shade(negColor, 0.38), side: shade(negColor, -0.32) };
+
+    const floor = `<polygon points="${PAD_L},${zeroY} ${CW-padR},${zeroY} ${CW-padR+DX},${zeroY+DY} ${PAD_L+DX},${zeroY+DY}" fill="rgba(255,255,255,0.035)" stroke="${GRID}" stroke-width="1"/>`;
+
+    let gridLines = '';
+    const gridCount = 3;
+    for(let g=1; g<=gridCount; g++){
+      const val = min + (max-min)*g/gridCount;
+      const gy = y(val);
+      gridLines += `<line x1="${PAD_L}" y1="${gy}" x2="${CW-padR}" y2="${gy}" stroke="${GRID}" stroke-width="1" stroke-dasharray="2,3"/>`;
+      gridLines += `<text x="${PAD_L-6}" y="${gy+3}" font-size="8" fill="${AXIS}" text-anchor="end">${fmtCompact(val)}</text>`;
+    }
+
+    let bars = '', xLabels = '';
+    data.forEach((v,i) => {
+      const bx = slot(i);
+      const top = Math.min(y(v), zeroY);
+      const bottom = Math.max(y(v), zeroY);
+      const h = Math.max(bottom-top, 1.5);
+      const c = v>=0 ? posC : negC;
+
+      const sideFace = `<polygon points="${bx+bw},${top} ${bx+bw},${top+h} ${bx+bw+DX},${top+h+DY} ${bx+bw+DX},${top+DY}" fill="${c.side}"/>`;
+      const topFace = `<polygon points="${bx},${top} ${bx+bw},${top} ${bx+bw+DX},${top+DY} ${bx+DX},${top+DY}" fill="${c.top}"/>`;
+      const frontFace = `<rect x="${bx}" y="${top}" width="${bw}" height="${h}" fill="${c.front}" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
+      bars += sideFace + frontFace + topFace;
+
+      if(n>6 && i%2!==0 && i!==n-1) return;
+      xLabels += `<text x="${bx+bw/2}" y="${CH-6}" font-size="8" fill="${AXIS}" text-anchor="middle">${labels[i]}</text>`;
+    });
+
+    return `<svg viewBox="0 0 ${CW} ${CH}" xmlns="http://www.w3.org/2000/svg">${floor}${gridLines}${bars}${xLabels}</svg>`;
+  }
+
+  function drawCharts(d){
+    const labels = d.years.map(y => 'Y'+y.year);
+    const invData = d.years.map(y=>y.cumInvestment);
+    const retData = d.years.map(y=>y.cumReturns);
+    $('chartCumulative').innerHTML = svgLineChart(labels, [
+      { data: invData, color: '#eb2e77' },
+      { data: retData, color: '#25b350' }
+    ], d.payback);
+
+    const netData = d.years.map(y=>y.g - y.opexTotal);
+    $('chartCashflow').innerHTML = svgBarChart3D(labels, netData, '#25b350', '#eb2e77');
+  }
+
+  // ---- Shareable PDF report (kept in English — PDF base fonts don't support Devanagari) ----
+  function toDataURL(url){
+    return fetch(url).then(r => r.blob()).then(blob => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    }));
+  }
+  function imageDims(dataUrl){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
+  const PDF_PINK = [235,46,119], PDF_INK = [24,26,31],
+        PDF_SOFT = [110,114,124], PDF_LINE = [225,225,232], PDF_BGSOFT = [253,240,245];
+
+  // jsPDF's standard fonts have no ₹ glyph — use "Rs." in the PDF, and always report in English
+  function fmtINRPdf(n, decimals){
+    if(!isFinite(n)) n = 0;
+    n = Math.round(n * Math.pow(10,decimals||0)) / Math.pow(10,decimals||0);
+    const neg = n < 0; n = Math.abs(n);
+    let parts = n.toFixed(decimals||0).split('.');
+    let intPart = parts[0];
+    let last3 = intPart.length > 3 ? intPart.slice(-3) : intPart;
+    let rest = intPart.length > 3 ? intPart.slice(0,-3) : '';
+    if(rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    let joined = (rest ? rest + ',' : '') + last3;
+    return (neg?'-':'') + 'Rs. ' + joined + (parts[1] ? '.'+parts[1] : '');
+  }
+  function fmtCompactPdf(n){
+    const abs = Math.abs(n);
+    if(abs >= 1e7) return 'Rs. ' + (n/1e7).toFixed(2) + ' Cr';
+    if(abs >= 1e5) return 'Rs. ' + (n/1e5).toFixed(2) + ' L';
+    return fmtINRPdf(n,0);
+  }
+
+  async function generateReportPDF(d){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    const contentW = pageW - margin*2;
+
+    let nikolDims = null, dmlrdDims = null, nikolData = null, dmlrdData = null;
+    try {
+      [nikolData, dmlrdData] = await Promise.all([
+        toDataURL('NIKOL EV Final Logo Black.png'),
+        toDataURL('DMLRD-logo-primary-LR-1k_1.png')
+      ]);
+      [nikolDims, dmlrdDims] = await Promise.all([imageDims(nikolData), imageDims(dmlrdData)]);
+    } catch(e){ /* logos are a nice-to-have; report still generates without them */ }
+
+    function header(){
+      let y = margin;
+      if(nikolData && nikolDims){
+        const w = 118, h = w * (nikolDims.h/nikolDims.w);
+        doc.addImage(nikolData, 'PNG', margin, y, w, h);
+      }
+      if(dmlrdData && dmlrdDims){
+        const w = 95, h = w * (dmlrdDims.h/dmlrdDims.w);
+        doc.addImage(dmlrdData, 'PNG', pageW-margin-w, y, w, h);
+      }
+      return y + 42;
+    }
+    function sectionBar(title, y){
+      doc.setFillColor(...PDF_PINK);
+      doc.rect(margin, y-9, 3, 12, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...PDF_INK);
+      doc.text(title, margin+9, y);
+      return y + 12;
+    }
+    function kvGrid(rows, y, cols){
+      cols = cols || 2;
+      const colW = contentW/cols;
+      doc.setFontSize(9);
+      rows.forEach((r,i) => {
+        const cx = margin + (i%cols)*colW;
+        const cy = y + Math.floor(i/cols)*30;
+        doc.setFont('helvetica','normal'); doc.setTextColor(...PDF_SOFT);
+        doc.text(r[0], cx, cy);
+        doc.setFont('helvetica','bold'); doc.setTextColor(...PDF_INK); doc.setFontSize(11.5);
+        doc.text(r[1], cx, cy+13);
+        doc.setFontSize(9);
+      });
+      return y + Math.ceil(rows.length/cols)*30 + 6;
+    }
+
+    let y = header();
+    doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(...PDF_PINK);
+    doc.text('Franchise ROI Report', margin, y);
+    y += 15;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...PDF_SOFT);
+    const genDate = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+    doc.text(`Generated ${genDate}  ·  All amounts exclude GST  ·  Pune, Maharashtra`, margin, y);
+    y += 24;
+
+    y = sectionBar('Investment Parameters', y);
+    y = kvGrid([
+      ['Type of Charger', `${d.v.chargerKW} kW`],
+      ['Charger Cost', fmtINRPdf(d.v.chargerCost)],
+      ['Infra Cost', fmtINRPdf(d.v.infraCost)],
+      ['Total CAPEX', fmtINRPdf(d.capex)]
+    ], y+16, 4);
+
+    y = sectionBar('Operating Cost Parameters', y);
+    y = kvGrid([
+      ['Internet (monthly)', fmtINRPdf(d.v.monthlyInternet)],
+      ['CMS Fees (annual)', fmtINRPdf(d.v.annualCMS)],
+      ['Site Rental (monthly)', fmtINRPdf(d.v.monthlyRental)],
+      ['AMC (Year 2 base)', fmtINRPdf(d.amcBase)]
+    ], y+16, 4);
+
+    y = sectionBar('Revenue Parameters (per unit)', y);
+    y = kvGrid([
+      ['Customer Rate', fmtINRPdf(d.v.customerRate,2)],
+      ['DISCOM Charges', fmtINRPdf(d.v.discomCharges,2)],
+      ['NIKOL EV Service Charge', fmtINRPdf(d.v.serviceCharge,2)],
+      ['Land Owner Share', fmtINRPdf(d.v.landOwnerShare,2)],
+      ['Profit per Unit', fmtINRPdf(d.ppu,2)],
+      ['Operating Days / Year', `${d.v.daysPerYear} days`]
+    ], y+16, 3);
+
+    y = sectionBar('Charging Hours / Day by Year', y);
+    doc.autoTable({
+      startY: y+8, margin:{left:margin, right:margin}, theme:'plain',
+      styles:{ fontSize:8.5, textColor:PDF_INK, halign:'center', cellPadding:4 },
+      headStyles:{ textColor:PDF_SOFT, fontStyle:'bold', fontSize:7.5 },
+      body:[ d.years.map(yr => yr.hrs + 'h') ],
+      head:[ d.years.map(yr => 'Y'+yr.year) ]
+    });
+    y = doc.lastAutoTable.finalY + 18;
+
+    doc.setFillColor(...PDF_BGSOFT);
+    doc.roundedRect(margin, y, contentW, 84, 8, 8, 'F');
+    const stats = [
+      ['ROI (10 yrs)', d.roiMultiple.toFixed(2) + 'x'],
+      ['Payback Period', d.payback===null ? 'beyond 10 yrs' : d.payback.toFixed(1)+' yrs'],
+      ['10-yr Total Profit', fmtCompactPdf(d.totalG)],
+      ['10-yr Total Revenue', fmtCompactPdf(d.totalH)]
+    ];
+    const sw = contentW/4;
+    stats.forEach((s,i) => {
+      const cx = margin + i*sw + 14;
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...PDF_SOFT);
+      doc.text(s[0], cx, y+24);
+      doc.setFontSize(16); doc.setTextColor(...PDF_PINK);
+      doc.text(s[1], cx, y+50);
+    });
+
+    // ---- Page 2: detailed year-by-year breakdown ----
+    doc.addPage();
+    y = header();
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...PDF_INK);
+    doc.text('10-Year Detailed Breakdown', margin, y);
+    y += 20;
+
+    doc.autoTable({
+      startY: y, margin:{left:margin, right:margin},
+      head:[['Year','Opex','Profit','Net Cash','Cum. Investment','Cum. Returns']],
+      body: d.years.map(yr => [
+        'Year '+yr.year, fmtINRPdf(yr.opexTotal), fmtINRPdf(yr.g), fmtINRPdf(yr.g - yr.opexTotal),
+        fmtINRPdf(yr.cumInvestment), fmtINRPdf(yr.cumReturns)
+      ]),
+      foot:[['Total', fmtINRPdf(d.totalOpex), fmtINRPdf(d.totalG), fmtINRPdf(d.totalG-d.totalOpex), '', '']],
+      styles:{ fontSize:8.5, textColor:PDF_INK, cellPadding:5 },
+      headStyles:{ fillColor:PDF_PINK, textColor:255, fontStyle:'bold' },
+      footStyles:{ fillColor:PDF_BGSOFT, textColor:PDF_INK, fontStyle:'bold' },
+      alternateRowStyles:{ fillColor:[250,249,251] }
+    });
+    y = doc.lastAutoTable.finalY + 20;
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...PDF_SOFT);
+    const note = "Figures are indicative, based on the inputs on the previous page, and exclude GST. Actual results depend on site footfall, tariff changes and utilisation. AMC, rent and CMS assumptions follow NIKOL EV's standard franchise model.";
+    doc.text(doc.splitTextToSize(note, contentW), margin, y);
+    y += 34;
+
+    doc.setDrawColor(...PDF_LINE); doc.line(margin, y, pageW-margin, y); y += 16;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...PDF_INK);
+    doc.text('NIKOL EV · Electrifying Future', margin, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...PDF_SOFT);
+    doc.text('Built for NIKOL EV by DMLRD Tech', margin, y+12);
+
+    return doc.output('blob');
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  async function shareReport(){
+    if(!lastCalc) return;
+    const btn = $('shareBtn');
+    const originalLabel = btn.textContent;
+    btn.disabled = true; btn.textContent = t('nav_generating');
+    const filename = 'NIKOL-EV-Franchise-ROI-Report.pdf';
+    const shareText = `NIKOL EV Franchise ROI: ${lastCalc.roiMultiple.toFixed(2)}x over 10 years, payback in ${lastCalc.payback===null?'beyond 10 yrs':lastCalc.payback.toFixed(1)+' years'}. Full report attached.`;
+    try {
+      const blob = await generateReportPDF(lastCalc);
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], title:'NIKOL EV Franchise ROI Report', text: shareText });
+      } else if(navigator.share){
+        downloadBlob(blob, filename);
+        await navigator.share({ title:'NIKOL EV Franchise ROI Report', text: shareText });
+      } else {
+        downloadBlob(blob, filename);
+        const subject = encodeURIComponent('NIKOL EV Franchise ROI Report');
+        const body = encodeURIComponent(shareText + '\n\nThe detailed report has been downloaded to your device — attach it to this email before sending.');
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      }
+    } catch(err){
+      if(err && err.name !== 'AbortError'){
+        console.error(err);
+        alert('Could not generate the report. Please try again.');
+      }
+    } finally {
+      btn.disabled = false; btn.textContent = originalLabel;
+    }
+  }
+  $('shareBtn').addEventListener('click', shareReport);
+
+  // Wire up events
+  document.querySelectorAll('#chargerKW,#chargerCost,#infraCost,#monthlyInternet,#annualCMS,#monthlyRental,#customerRate,#discomCharges,#serviceCharge,#landOwnerShare,#daysPerYear')
+    .forEach(el => el.addEventListener('input', calculate));
+  document.addEventListener('input', e => { if(e.target.classList.contains('hourInput')) calculate(); });
+
+  $('resetBtn').addEventListener('click', () => {
+    inputIds.forEach(id => $(id).value = DEFAULTS[id]);
+    document.querySelectorAll('.hourInput').forEach((inp,i)=> inp.value = DEFAULTS.hours[i]);
+    calculate();
+  });
+
+  // ---- Wizard step navigation ----
+  const TOTAL_STEPS = 5;
+  let currentStep = 1;
+  const stepTabs = Array.from(document.querySelectorAll('.step-tab'));
+  const stepPanels = Array.from(document.querySelectorAll('.step-panel'));
+  const backBtn = $('backBtn'), nextBtn = $('nextBtn'), shareBtn = $('shareBtn');
+
+  function updateNavLabels(){
+    const onResults = currentStep === TOTAL_STEPS;
+    if(!onResults){
+      nextBtn.textContent = (currentStep === TOTAL_STEPS - 1 ? t('nav_results') : t('nav_next')) + ' →';
+    }
+    shareBtn.textContent = '📤 ' + t('nav_share');
+  }
+
+  function showStep(n){
+    currentStep = Math.min(TOTAL_STEPS, Math.max(1, n));
+    stepPanels.forEach(p => p.classList.toggle('active', +p.dataset.step === currentStep));
+    stepTabs.forEach(t => {
+      const s = +t.dataset.step;
+      t.classList.toggle('active', s === currentStep);
+      t.classList.toggle('done', s < currentStep);
+    });
+    backBtn.hidden = currentStep === 1;
+    const onResults = currentStep === TOTAL_STEPS;
+    nextBtn.hidden = onResults;
+    shareBtn.hidden = !onResults;
+    updateNavLabels();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  stepTabs.forEach(t => t.addEventListener('click', () => showStep(+t.dataset.step)));
+  backBtn.addEventListener('click', () => showStep(currentStep - 1));
+  nextBtn.addEventListener('click', () => showStep(currentStep + 1));
+
+  applyStaticI18n();
+  updateNavLabels();
+  showStep(1);
+  calculate();
+})();
+</script>
+</body>
+</html>

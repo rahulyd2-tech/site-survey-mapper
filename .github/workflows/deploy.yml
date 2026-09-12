@@ -39,6 +39,11 @@ jobs:
           cp -r index.html manifest.webmanifest sw.js css js assets dist/aoadev/
           cp CNAME dist/
 
+      - name: Assemble site under /nikolev
+        run: |
+          mkdir -p dist/nikolev
+          cp -r nikolev/. dist/nikolev/
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
