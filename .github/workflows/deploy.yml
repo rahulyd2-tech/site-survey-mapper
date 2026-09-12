@@ -33,13 +33,19 @@ jobs:
           sed -i "s|__SSM_WEB_APP_URL__|${SSM_WEB_APP_URL}|g" js/sheets-api.js
           sed -i "s|__SSM_TOKEN__|${SSM_TOKEN}|g" js/sheets-api.js
 
+      - name: Assemble site under /aoadev
+        run: |
+          mkdir -p dist/aoadev
+          cp -r index.html manifest.webmanifest sw.js css js assets dist/aoadev/
+          cp CNAME dist/
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
 
   deploy:
     needs: build
